@@ -20,7 +20,7 @@ open Graph
 %%
 
 graph:
-  | vs=separated_list(COMMA, IDENT) SEMICOLON es=separated_list(COMMA, edge) EOF { Graph(vs, es) }
+  | vs=separated_list(COMMA, IDENT) SEMICOLON es=separated_list(COMMA, edge) EOF { Graph(SS.of_list vs, SSS.of_list es) }
 
 edge:
   | from_v=IDENT ARROW to_v=IDENT { (from_v, to_v) }
