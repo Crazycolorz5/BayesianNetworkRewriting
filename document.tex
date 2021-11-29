@@ -25,6 +25,8 @@
 \usepackage{booktabs}
 \usepackage{algorithm}
 \usepackage{algorithmic}
+\usepackage{tkz-graph}
+
 \urlstyle{same}
 
 % the following package is optional:
@@ -66,56 +68,47 @@
 	/TemplateVersion (IJCAI.2022.0)
 }
 
-\title{IJCAI--22 Formatting Instructions}
+\title{Bayesian Networks and Graph Rewrites}
 
 % Single author syntax
 \author{
-	Author Name
+	Adam Chen
 	\affiliations
-	Affiliation
+	Stevens Institute of Technology
 	\emails
-	pcchair@ijcai-22.org
+	achen19@stevens.edu
 }
 
-% Multiple author syntax (remove the single-author syntax above and the \iffalse ... \fi here)
-% Check the ijcai22-multiauthor.tex file for detailed instructions
-\iffalse
-\author{
-	First Author$^1$
-	\and
-	Second Author$^2$\and
-	Third Author$^{2,3}$\And
-	Fourth Author$^4$
-	\affiliations
-	$^1$First Affiliation\\
-	$^2$Second Affiliation\\
-	$^3$Third Affiliation\\
-	$^4$Fourth Affiliation
-	\emails
-	\{first, second\}@example.com,
-	third@other.example.com,
-	fourth@example.com
-}
-\fi
+\tikzstyle{VertexStyle} = [shape=rectangle,minimum width=6ex, draw]
+\tikzstyle{EdgeStyle}   = [->,>=stealth']
 
 \begin{document}
 	
 	\maketitle
 	
 	\begin{abstract}
-		The {\it IJCAI--22 Proceedings} will be printed from electronic
-		manuscripts submitted by the authors. The electronic manuscript will
-		also be included in the online version of the proceedings. This paper
-		provides the style instructions.
+		Abstract here.
 	\end{abstract}
 	
 		
-	\section{Motivating Example}
-	$A \rightarrow B \rightarrow C$ is indistinguishable from $C \rightarrow B \rightarrow A$.
+	\section{Introduction}
+	\subsection{Motivating Example}
+	$A \rightarrow B \rightarrow C$ is indistinguishable from $C \rightarrow B \rightarrow A$. However, substituting one structure with another in all cases may not preserve validity of a Bayesian network.
+	\begin{figure}[b]
+	\begin{tikzpicture}[scale=1] 
+		\SetGraphUnit{1.5}
+		\Vertex{Smoking}  \SOWE(Smoking){Chronic Bronchitis} \SOEA(Smoking){Lung Cancer}
+		\SOEA(Chronic Bronchitis){Fatigue} \SOEA(Lung Cancer){Mass on X-Ray}
+		\Edge[label=?](Smoking)(Chronic Bronchitis) \Edge(Smoking)(Lung Cancer)
+		\Edge(Lung Cancer)(Fatigue) \Edge(Lung Cancer)(Mass on X-Ray) \Edge(Chronic Bronchitis)(Fatigue)
+	\end{tikzpicture}
+	\caption{Example of a Bayesian Network. As only conditional probabilities, which are symmetric, are specified, the graph is agnostic to whether the ``?'' edge is in the direction shown or is reversed.}
+	\end{figure}
+	\paragraph{}
 	
 	We may take a structure $A \rightarrow B$ and replace it with creating a new node $C$ with $A \leftarrow C \rightarrow B$.
 	
-	\section{Divergence of Bayesian Networks from Causality}
+	\subsection{Divergence of Bayesian Networks from Causality}
 	
 	\begin{definition}
 		Bayesian networks $G_0$ and $G_1$ are isomorphic if $\forall P: G_0$ is compatible with $P \iff G_1$ is compatible with $P$.
