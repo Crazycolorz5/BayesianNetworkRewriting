@@ -79,8 +79,7 @@
 	achen19@stevens.edu
 }
 
-\tikzstyle{VertexStyle} = [shape=rectangle,minimum width=6ex, draw]
-\tikzstyle{EdgeStyle}   = [->,>=stealth']
+
 
 \begin{document}
 	
@@ -95,7 +94,10 @@
 	\subsection{Motivating Example}
 	$A \rightarrow B \rightarrow C$ is indistinguishable from $C \rightarrow B \rightarrow A$. However, substituting one structure with another in all cases may not preserve validity of a Bayesian network.
 	\begin{figure}[b]
-	\begin{tikzpicture}[scale=1] 
+	\begin{tikzpicture}[scale=1]
+		\tikzstyle{VertexStyle} = [shape=rectangle,minimum width=6ex, draw]
+		\tikzstyle{EdgeStyle}   = [->,>=stealth']
+		
 		\SetGraphUnit{1.5}
 		\Vertex{Smoking}  \SOWE(Smoking){Chronic Bronchitis} \SOEA(Smoking){Lung Cancer}
 		\SOEA(Chronic Bronchitis){Fatigue} \SOEA(Lung Cancer){Mass on X-Ray}
@@ -103,7 +105,31 @@
 		\Edge(Lung Cancer)(Fatigue) \Edge(Lung Cancer)(Mass on X-Ray) \Edge(Chronic Bronchitis)(Fatigue)
 	\end{tikzpicture}
 	\caption{Example of a Bayesian Network. As only conditional probabilities, which are symmetric, are specified, the graph is agnostic to whether the ``?'' edge is in the direction shown or is reversed.}
+	\label{dir-ex}
 	\end{figure}
+
+	\begin{figure}[b]
+	\begin{tikzpicture}[scale=1]
+		\tikzstyle{VertexStyle} = [shape=rectangle,minimum width=6ex, draw]
+		\tikzstyle{EdgeStyle}   = [-,>=stealth']
+		
+		\SetGraphUnit{1.5}
+		\Vertex{Smoking}  \SOWE(Smoking){Chronic Bronchitis} \SOEA(Smoking){Lung Cancer}
+		\SOEA(Chronic Bronchitis){Fatigue} \SOEA(Lung Cancer){Mass on X-Ray}
+		\Edge(Smoking)(Chronic Bronchitis) \Edge(Smoking)(Lung Cancer)
+		\draw[thick, ->,>=stealth'](Lung Cancer)--(Fatigue); \Edge(Lung Cancer)(Mass on X-Ray) \draw[thick, ->,>=stealth'](Chronic Bronchitis)--(Fatigue);
+	\end{tikzpicture}
+	\caption{Replacing every undirected edge with an edge in an arbitrary direction, without introducing any new v-structures, yields an equivalent Bayesian Network.}
+	\label{undir-ex}
+	\end{figure}
+
+	With respect to Figure \ref{undir-ex}, the condition that no additional v-structures be introduced limits the choice of direction to three options:
+	\begin{enumerate}
+		\item The graph as shown in Figure \ref{dir-ex}.
+		\item Chronic Bronchitis $\rightarrow$ Smoking $\rightarrow$ Lung Cancer $\rightarrow$ Mass on X-Ray.
+		\item Mass on X-Ray $\rightarrow$ Lung Cancer $\rightarrow$ Smoking $\rightarrow$ Chronic Bronchitis.
+	\end{enumerate}
+	Any other choice on arrows would create a new v-structure, either on (Chronic Bronchitis, Smoking, Lung Cancer), or on (Smoking, Lung Cancer, Mass on X-Ray).
 	\paragraph{}
 	
 	We may take a structure $A \rightarrow B$ and replace it with creating a new node $C$ with $A \leftarrow C \rightarrow B$.
@@ -113,10 +139,6 @@
 	\begin{definition}
 		Bayesian networks $G_0$ and $G_1$ are isomorphic if $\forall P: G_0$ is compatible with $P \iff G_1$ is compatible with $P$.
 	\end{definition}
-
-	\begin{proposition}
-		Inverting all the arrows in a Bayesian network is an isomorphism.
-	\end{proposition}
 	
 	
 	\appendix
