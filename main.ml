@@ -11,18 +11,19 @@ let help_string =
 ./main print <graph_file>
 "
 
+let graph_of_fname fname = 
+    let lexbuf = Lexing.from_channel (open_in fname) in
+    Lexing.set_filename lexbuf fname;
+    try Parser.graph Lexer.token lexbuf
+    with
+    | Parser.Error -> fprintf stderr "%a: syntax error\n" print_position lexbuf; exit (-1)
+    | Failure s -> fprintf stderr "%s: " s; fprintf stderr "; %a: lexing error\n" print_position lexbuf; exit (-1)
+
 let main = 
     try begin match Sys.argv.(1) with
         | "print" -> 
             let fname = Sys.argv.(2) in
-            let lexbuf = Lexing.from_channel (open_in fname) in
-            Lexing.set_filename lexbuf fname;
-            begin try let g = Parser.graph Lexer.token lexbuf in
-                print_string(string_of_graph g); print_newline ();
-            with
-            | Parser.Error -> fprintf stderr "%a: syntax error\n" print_position lexbuf; exit (-1)
-            | Failure s -> fprintf stderr "%s: " s; fprintf stderr "; %a: lexing error\n" print_position lexbuf; exit (-1)
-            end
+            print_string @@ string_of_graph @@ graph_of_fname @@ fname
         | _ -> print_string help_string
     end with
     | _ -> print_string help_string

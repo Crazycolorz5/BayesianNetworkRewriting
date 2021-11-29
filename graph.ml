@@ -31,10 +31,10 @@ let vertices g = match g with Graph (vs, _) -> vs
 let edges g = match g with Graph (_, es) -> es
 
 let string_of_vertices (vs : SS.t) : string =
-    (String.concat ",\n" (SS.elements vs))
+    String.concat ",\n" @@ SS.elements vs
 
 let string_of_edges (es : SSS.t) : string = 
-    String.concat ",\n" (List.map (fun (x, y) -> x ^ " -> " ^ y) (SSS.elements es))
+    String.concat ",\n" @@ List.map (fun (x, y) -> x ^ " -> " ^ y) (SSS.elements es)
 
 let string_of_graph (g : t) : string = match g with
     | Graph(vs, es) -> 
@@ -45,11 +45,11 @@ let string_of_graph (g : t) : string = match g with
 
 let edges_from (g : t) (v : string) : SSS.t = 
     SSS.filter (fun e -> fst e = v) (edges g)
-let children = (fun g v -> SSS.fold (fun e vset -> SS.add (snd e) vset) (edges_from g v) SS.empty)
+let children g v = SSS.fold (fun e vset -> SS.add (snd e) vset) (edges_from g v) SS.empty
 
 let edges_to (g : t) (v : string) : SSS.t = 
     SSS.filter (fun e -> snd e = v) (edges g)
-let parents = (fun g v -> SSS.fold (fun e vset -> SS.add (fst e) vset) (edges_to g v) SS.empty)
+let parents g v = SSS.fold (fun e vset -> SS.add (fst e) vset) (edges_to g v) SS.empty
 
 let workset_alg f g v = 
     let workset = ref (f g v) in
@@ -61,7 +61,7 @@ let workset_alg f g v =
         then ()
         else begin
             seenset := SS.add elt !seenset;
-            workset := SS.union !workset (f g elt)
+            workset := SS.union !workset @@ f g elt
         end
     done;
     !seenset
@@ -83,7 +83,7 @@ let adjacent g x y = let es = edges g in
     SSS.mem (x, y) es || SSS.mem (y, x) es
 
 let is_vstructure g x y z = let es = edges g in
-    SSS.mem (x, y) es && SSS.mem (z, y) es && not (adjacent g x z)
+    SSS.mem (x, y) es && SSS.mem (z, y) es && not @@ adjacent g x z
 
 let all_vstructures g = let vs = vertices g in let acc = ref [] in
     SS.iter (fun x -> SS.iter (fun z -> 
@@ -101,9 +101,9 @@ let equiv g0 g1 =
     (* "Two dags are equivalent iff they have the same skeletons and the same v-structures" *)
     let skeleton0 = skeleton g0 in
     let skeleton1 = skeleton g1 in
-    (SSS.equal skeleton0 skeleton1) && begin
-    let v0 = sort_f (all_vstructures g0) in
-    let v1 = sort_f (all_vstructures g1) in
+    SSS.equal skeleton0 skeleton1 && begin
+    let v0 = sort_f @@ all_vstructures g0 in
+    let v1 = sort_f @@ all_vstructures g1 in
     List.equal (fun x y -> x = y) v0 v1
     end
 
