@@ -107,6 +107,28 @@ let equiv g0 g1 =
     List.equal (fun x y -> x = y) v0 v1
     end
 
+let swap (x, y) = (y, x)
+
+(* Note that this does not produce a DAG, as there will be undirected edges
+   (represented as having an edge in both directions) *)
+let pattern g =
+    let undir_edges = skeleton g in
+    let vstructs = all_vstructures g in
+    let edges = ref SSS.empty in
+    (* We're going to explicitly add in the reverse edges that aren't required by the v-structures. *)
+    SSS.iter (fun edge -> 
+        List.iter (fun (x, y, z) -> 
+            if edge = (x, y) || edge = (z, y)
+            then edges := SSS.add edge !edges
+            else if edge = (y, x) || edge = (y, z)
+            then edges := SSS.add (swap edge) !edges
+            else edges := SSS.add edge @@ SSS.add (swap edge) !edges
+        ) vstructs
+    ) undir_edges;
+    Graph (vertices g, !edges)
+
+
 let covered (g : t) (e : string * string) : bool = 
     SS.equal (SS.add (fst e) (ancestors g (fst e))) (ancestors g (snd e))
+
 

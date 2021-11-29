@@ -23,11 +23,16 @@ let main =
     try begin match Sys.argv.(1) with
         | "print" -> 
             let fname = Sys.argv.(2) in
-            print_string @@ string_of_graph @@ graph_of_fname @@ fname
+            print_string @@ string_of_graph @@ graph_of_fname @@ fname;
+            print_newline ()
         | "equiv" ->
             let f0, f1 = Sys.argv.(2), Sys.argv.(3) in
             let res = equiv (graph_of_fname f0) (graph_of_fname f1) in
             if res then print_string "Equivalent." else print_string "NOT Equivalent.";
+            print_newline ()
+        | "pattern" ->
+            let fname = Sys.argv.(2) in
+            print_string @@ string_of_graph @@ pattern @@ graph_of_fname @@ fname;
             print_newline ()
         | _ -> print_string help_string
     end with
