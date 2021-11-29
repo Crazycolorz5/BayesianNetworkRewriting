@@ -13,6 +13,13 @@ module StringPairs = struct
         | c -> c
 end
 
+let ternary_compare (x0, y0, z0) (x1, y1, z1) = 
+    match Stdlib.compare x0 x1 with
+        | 0 -> begin match Stdlib.compare y0 y1 with
+            | 0 -> Stdlib.compare z0 z1
+            | c -> c end
+        | c -> c
+
 module SSS = Set.Make(StringPairs)
 
 type t = Graph of SS.t * SSS.t
@@ -78,14 +85,27 @@ let adjacent g x y = let es = edges g in
 let is_vstructure g x y z = let es = edges g in
     SSS.mem (x, y) es && SSS.mem (z, y) es && not (adjacent g x z)
 
+let all_vstructures g = let vs = vertices g in let acc = ref [] in
+    SS.iter (fun x -> SS.iter (fun z -> 
+        if x < z then SS.iter (fun y -> if is_vstructure g x y z then acc := (x, y, z) :: !acc else ()) vs
+        else ()) vs) vs;
+    !acc
+
 let skeleton g : SSS.t = 
     (* Erase directionality by transforming all edges into lexically ordered edge *)
     let order (f_v, t_v) = if String.compare f_v t_v > 0 then (t_v, f_v) else (f_v, t_v) in
     SSS.fold (fun edge acc -> SSS.add (order edge) acc) (edges g) SSS.empty
 
 let equiv g0 g1 = 
+    let sort_f = List.sort ternary_compare in
     (* "Two dags are equivalent iff they have the same skeletons and the same v-structures" *)
-    false
+    let skeleton0 = skeleton g0 in
+    let skeleton1 = skeleton g1 in
+    (SSS.equal skeleton0 skeleton1) && begin
+    let v0 = sort_f (all_vstructures g0) in
+    let v1 = sort_f (all_vstructures g1) in
+    List.equal (fun x y -> x = y) v0 v1
+    end
 
 let covered (g : t) (e : string * string) : bool = 
     SS.equal (SS.add (fst e) (ancestors g (fst e))) (ancestors g (snd e))
