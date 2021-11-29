@@ -88,13 +88,13 @@
 	\maketitle
 	
 	\begin{abstract}
-		It is known that Bayesian Networks are an insufficient model for causality, as they merely describe the decomposition of a joint probability into conditional probabilities.
+		It is known that Bayesian networks are an insufficient model for causality, as they merely describe the decomposition of a joint probability into conditional probabilities.
 		This fails, in most cases, to capture directionality --- a crucial aspect of causality.
 		Furthermore, conditional probability fails to tell us about hidden confounders.
 		
 		I look at the mathematical formalizations of these two shortcomings, and review the existing corpus of work on their categorization.
-		I implement a tool to analyze when these shortcomings may be an issue and create ambiguities in Bayesian Networks.
-		The tool is used to find ambiguities in practical, real-life Bayesian Networks, and the implications of such ambiguities on causal inference is discussed.
+		I implement a tool to analyze when these shortcomings may be an issue and create ambiguities in Bayesian networks.
+		The tool is used to find ambiguities in practical, real-life Bayesian networks, and the implications of such ambiguities on causal inference is discussed.
 	\end{abstract}
 	
 		
@@ -120,13 +120,13 @@
 			\Edge(Lung Cancer)(Fatigue) \Edge(Lung Cancer)(Mass on X-Ray) \Edge(Chronic Bronchitis)(Fatigue)
 			\Edge[style=dotted](X)(Smoking) \Edge[style=dotted](X)(Lung Cancer)
 		\end{tikzpicture}
-		\caption{Example of a Bayesian Network. As only conditional probabilities, which are symmetric, are specified, the graph is agnostic to whether the ``?'' edge is in the direction shown or is reversed.}
+		\caption{Example of a Bayesian network. Are we able to reverse the ``?'' arrow? Are we able to add the X node (and dotted edges)?}
 		\label{dir-ex}
 	\end{figure}
 	
-	Consider the Bayesian Network shown in Figure \ref{dir-ex}, modified with two proposed changes from one presented in slides by Kleinberg\cite{lec4slides}.
+	Consider the Bayesian network shown in Figure \ref{dir-ex}, modified with two proposed changes from one presented in slides by Kleinberg\cite{lec4slides}.
 	
-	We know that in simple examples, as shown before, we may be able to reverse the direction of an arrow and have an equivalent Bayesian Network.
+	We know that in simple examples, as shown before, we may be able to reverse the direction of an arrow and have an equivalent Bayesian network.
 	Is it the case that we can flip the arrow labeled with ``?'' and have an equivalent network? More generally, what are all of ways we can flip arrows and have an equivalent network? I refer to this as the ``\problemone''. 
 
 	We also know that many cases, there is some underlying cause (say X), that causes two other variables, thus creating an apparent correlation (in the example, smoking and lung cancer). In this example, can we add the node X and maintain compatibility with the joint probability distributions (excluding X) described by the original network? More generally, how can we add (or remove) nodes while maintaining compatibility on the restricted domain? I refer to this as the ``\problemtwo''.
@@ -148,7 +148,7 @@
 		\Edge(Smoking)(Chronic Bronchitis) \Edge(Smoking)(Lung Cancer)
 		\draw[thick, ->,>=stealth'](Lung Cancer)--(Fatigue); \Edge(Lung Cancer)(Mass on X-Ray) \draw[thick, ->,>=stealth'](Chronic Bronchitis)--(Fatigue);
 	\end{tikzpicture}
-	\caption{Replacing every undirected edge with an edge in an arbitrary direction, without introducing any new v-structures, yields an equivalent Bayesian Network.}
+	\caption{Replacing every undirected edge with an edge in an arbitrary direction, without introducing any new v-structures, yields an equivalent Bayesian network.}
 	\label{undir-ex}
 	\end{figure}
 
