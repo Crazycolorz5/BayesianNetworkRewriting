@@ -162,6 +162,6 @@ let enumerate_equivalencies g : t list=
     in enum_equiv_rec (List.fold_left (fun acc e -> SSS.union acc @@ edges_of_vstruct e) SSS.empty vstructs) undir_edges
 
 let covered (g : t) (e : string * string) : bool = 
-    SS.equal (SS.add (fst e) (ancestors g (fst e))) (ancestors g (snd e))
+    SS.equal (SS.add (fst e) (parents g (fst e))) (parents g (snd e))
 
 
