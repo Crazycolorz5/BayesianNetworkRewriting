@@ -19,7 +19,12 @@ let main =
     let lexbuf = Lexing.from_string (read_all "graph.txt") in 
     try 
         let g = Parser.graph Lexer.token lexbuf in
-        print_string(string_of_graph g); print_newline
+        print_string(string_of_graph g); print_newline ();
+        print_string("Ancestors of cancer:\n");
+        print_string(string_of_vertices (ancestors g "cancer")); print_newline ();
+        print_string("Descendants of smoking:\n");
+        print_string(string_of_vertices (descendants g "smoking")); print_newline ();
+        ()
     with
       | Parser.Error ->
         fprintf stderr "%a: syntax error\n" print_position lexbuf;
