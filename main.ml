@@ -9,6 +9,9 @@ let print_position outx (lexbuf : Lexing.lexbuf) = (* Adapted from https://dev.r
 let help_string = 
 "Unknown option or incorrect parameters. Valid modes:
 ./main print <graph_file>
+./main equiv <graph_file1> <graph_file2>
+./main pattern <graph_file>
+./main enum <graph_file> <output_dir>
 "
 
 let graph_of_fname fname = 
@@ -34,6 +37,16 @@ let main =
             let fname = Sys.argv.(2) in
             print_string @@ string_of_graph @@ pattern @@ graph_of_fname @@ fname;
             print_newline ()
+        | "enum" -> 
+            let fname = Sys.argv.(2) in
+            let dirname = Sys.argv.(3) in
+            let equivs = enumerate_equivalencies @@ graph_of_fname @@ fname in
+            begin try Core.Unix.mkdir_p dirname
+            with Core.Unix.Unix_error _ -> () end;
+            List.iteri (fun i g ->
+                let out = open_out @@ dirname ^ "/" ^ fname ^ "_" ^ string_of_int i in
+                fprintf out "%s" @@ string_of_graph g; close_out out
+            ) equivs
         | _ -> print_string help_string
     end with
     | _ -> print_string help_string

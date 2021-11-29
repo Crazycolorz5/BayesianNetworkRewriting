@@ -85,6 +85,8 @@ let adjacent g x y = let es = edges g in
 let is_vstructure g x y z = let es = edges g in
     SSS.mem (x, y) es && SSS.mem (z, y) es && not @@ adjacent g x z
 
+let edges_of_vstruct (x, y, z) = SSS.add (z, y) @@ SSS.singleton (x, y)
+
 let all_vstructures g = let vs = vertices g in let acc = ref [] in
     SS.iter (fun x -> SS.iter (fun z -> 
         if x < z then SS.iter (fun y -> if is_vstructure g x y z then acc := (x, y, z) :: !acc else ()) vs
@@ -127,6 +129,37 @@ let pattern g =
     ) undir_edges;
     Graph (vertices g, !edges)
 
+let enumerate_equivalencies g : t list=
+    let undir_edges = skeleton g in
+    let vs = vertices g in
+    let vstructs = all_vstructures g in
+    let rec enum_equiv_rec determined_edges (undet_edges : SSS.t) = 
+        (* if we've determined all edges, we're done. *)
+        if SSS.is_empty undet_edges then [Graph(vs, determined_edges)] else
+        (* Pick an edge to be added arbitrarily. *)
+        let edge = SSS.choose undet_edges in
+        (* If the edge is already one the v-structs dictate, skip *)
+        if SSS.mem edge determined_edges || SSS.mem (swap edge) determined_edges
+            then enum_equiv_rec determined_edges (SSS.remove edge undet_edges) else
+        let undet_edges' = SSS.remove edge undet_edges in
+        (* Two possibilities: x -> y (call this the covariant case) or x <- y (contravariant). 
+           In each case, check that it does not add a 1) loop, 2) v-structure *)
+        let propose_edge e = begin let determined_edges' = SSS.add e determined_edges in
+            let g' = Graph (vs, determined_edges') in
+            (* 1 - adding the edge causes a loop iff one of the nodes becomes its own parent *)
+            (* To save a step on the traversal, just check that the parent is a descendant of its child. *)
+            if SS.mem (fst e) @@ descendants g' (snd e)
+            then []
+            (* 2- Adding a new edge creates a new v-struct if the child has another determined parent. *)
+            else if SS.cardinal @@ parents g' (snd e) != 1
+            then []
+            (* else we're safe to recurse *)
+            else enum_equiv_rec determined_edges' undet_edges'
+            end in
+        let covariant = propose_edge edge in
+        let contravariant = propose_edge @@ swap edge in
+        covariant @ contravariant
+    in enum_equiv_rec (List.fold_left (fun acc e -> SSS.union acc @@ edges_of_vstruct e) SSS.empty vstructs) undir_edges
 
 let covered (g : t) (e : string * string) : bool = 
     SS.equal (SS.add (fst e) (ancestors g (fst e))) (ancestors g (snd e))
