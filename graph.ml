@@ -1,4 +1,9 @@
-module SS = Set.Make(String)
+module SS = struct
+    include Set.Make(String)
+    let bind (vs : t) (f : string -> t) : t =
+        fold (fun elt acc -> union acc (f elt)) vs empty
+    let (>>=) = bind
+end
 
 module StringPairs = struct
   type t = string * string
@@ -12,6 +17,9 @@ module SSS = Set.Make(StringPairs)
 
 type t = Graph of SS.t * SSS.t
 
+
+(*** Convenience functions ***)
+
 let vertices g = match g with Graph (vs, _) -> vs
 let edges g = match g with Graph (_, es) -> es
 
@@ -24,6 +32,9 @@ let string_of_edges (es : SSS.t) : string =
 let string_of_graph (g : t) : string = match g with
     | Graph(vs, es) -> 
         string_of_vertices vs ^ ";\n" ^ string_of_edges es
+
+
+(*** Standard graph theory utility functions ***)
 
 let edges_from (g : t) (v : string) : SSS.t = 
     SSS.filter (fun e -> fst e = v) (edges g)
@@ -48,8 +59,34 @@ let workset_alg f g v =
     done;
     !seenset
 
+(* TODO: May be worth memoizing *)
 let ancestors : t -> string -> SS.t = 
     workset_alg parents
 
 let descendants : t -> string -> SS.t = 
     workset_alg children
+
+
+(*** And now the domain specific functions ***)
+
+(* Definitions and theorems from: "A Transformational Characterization of Equivalent Bayesian Network Structures", Chickering: https://arxiv.org/pdf/1302.4938.pdf *)
+
+(* Original reference: "Equivalence and Synthesis of Causal Models", Verma and Pearl: https://arxiv.org/pdf/1304.1108.pdf *)
+let adjacent g x y = let es = edges g in
+    SSS.mem (x, y) es || SSS.mem (y, x) es
+
+let is_vstructure g x y z = let es = edges g in
+    SSS.mem (x, y) es && SSS.mem (z, y) es && not (adjacent g x z)
+
+let skeleton g : SSS.t = 
+    (* Erase directionality by transforming all edges into lexically ordered edge *)
+    let order (f_v, t_v) = if String.compare f_v t_v > 0 then (t_v, f_v) else (f_v, t_v) in
+    SSS.fold (fun edge acc -> SSS.add (order edge) acc) (edges g) SSS.empty
+
+let equiv g0 g1 = 
+    (* "Two dags are equivalent iff they have the same skeletons and the same v-structures" *)
+    false
+
+let covered (g : t) (e : string * string) : bool = 
+    SS.equal (SS.add (fst e) (ancestors g (fst e))) (ancestors g (snd e))
+
