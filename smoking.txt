@@ -1,0 +1,11 @@
+smoking,
+chronic_bronchitis,
+lung_cancer,
+fatigue,
+xray_mass
+;
+smoking->chronic_bronchitis,
+smoking->lung_cancer,
+chronic_bronchitis->fatigue,
+lung_cancer->fatigue,
+lung_cancer->xray_mass

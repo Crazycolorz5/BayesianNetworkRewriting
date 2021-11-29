@@ -1,6 +1,0 @@
-stress,
-smoking,
-cancer
-;
-stress->smoking,
-smoking->cancer
