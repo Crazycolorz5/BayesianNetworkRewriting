@@ -79,8 +79,8 @@
 	achen19@stevens.edu
 }
 
-\newcommand{\problemone}{Equivalency Problem}
-\newcommand{\problemtwo}{Node Addition/Removal Problem}
+\newcommand{\problemone}{Directionality Problem}
+\newcommand{\problemtwo}{Marginalized Variables Problem}
 
 
 \begin{document}
@@ -136,7 +136,27 @@
 
 
 	\section{\problemone}
-
+	
+	Verma \& Pearl\cite{verma2013equivalence} give a necessary and sufficient condition for testing the equivalence of Bayesian networks.
+	Specifically, and phrased more simply by Chickering\cite{chickering2013transformational}, two Bayesian networks are equivalent if they have the same:
+	\begin{enumerate}
+		\item Skeleton: set of vertices and undirected edges.
+		\item V-Structures: set of all unshielded colliders (i.e. triples of the form $X \rightarrow Y \leftarrow Z$ with $X$ not adjacent to $Z$).
+	\end{enumerate}
+	More generally, since each Bayesian network belongs to a finitely-sized equivalence class of networks completely determined by skeleton and v-structures, we may characterize all networks equivalent to a given network by those factors.
+	
+	In the case of whether a single edge is reversible (while preserving equivalence), Chickering\cite{chickering2013transformational} presents a necessary and sufficient condition: the edge $X \rightarrow Y$ is reversible if and only if the parents of $Y$ are exactly $X$ and the parents of $X$.
+	(Moreover, they show that every equivalent network may be reached by a sequence of such edge reversals.)
+	
+	\paragraph{Revisiting the Motivating Example}
+	
+	Recall Figure \ref{dir-ex}. Observe that the sole parent of the Chronic Bronchitis node is the Smoking node, and that the Smoking node has no parents.
+	In other words, Chickering's condition is satisfied, so we may conclude that that edge is reversible.
+	
+	More generally, we may want to know what are \emph{all} the possible assignments of directions to arrows that maintain equivalency.
+	To do so, we note that the only v-structure in the graph is Chronic Bronchitis $\rightarrow$ Fatigue $\leftarrow$ Lung Cancer.
+	Thus we may erase the arrows on all other edges, and we obtain Figure \ref{undir-ex}.
+	
 	\begin{figure}[b]
 	\begin{tikzpicture}[scale=1]
 		\tikzstyle{VertexStyle} = [shape=rectangle,minimum width=6ex, draw]
@@ -152,21 +172,67 @@
 	\label{undir-ex}
 	\end{figure}
 
-	With respect to Figure \ref{undir-ex}, the condition that no cycles and no additional v-structures be introduced limits the choice of direction to four options:
+	However, we may not assign directions to the undirected edges however we please ($2^3=8$ ways).
+	The new assignment of directions must not introduce any new v-structures, and it must not create any cycles.
+	These constraints limit the choice of direction to four options:
 	\begin{enumerate}
 		\item The graph as shown in Figure \ref{dir-ex}.
 		\item Chronic Bronchitis $\rightarrow$ Smoking $\rightarrow$ Lung Cancer $\rightarrow$ Mass on X-Ray.
 		\item Mass on X-Ray $\rightarrow$ Lung Cancer $\rightarrow$ Smoking $\rightarrow$ Chronic Bronchitis.
 		\item Chronic Bronchitis $\leftarrow$ Smoking $\leftarrow$ Lung Cancer $\rightarrow$ Mass on X-Ray.
 	\end{enumerate}
-	Any other choice on arrows would create a new v-structure, either on (Chronic Bronchitis, Smoking, Lung Cancer), or on (Smoking, Lung Cancer, Mass on X-Ray).
-	
-	\subsection{Implications for Data}
-	
+	Any other choice on arrows would create a new v-structure, either on (Chronic Bronchitis, Smoking, Lung Cancer), or on (Smoking, Lung Cancer, Mass on X-Ray). In this example, creating a cycle is impossible.
 	
 	\section{\problemtwo}
+	\paragraph{Marginalization}
 	
+	\paragraph{Node Addition}
+	In the case of inference, we may be more interested in whether our observed data is data marginalized on some hidden cause X.
+	Formally, is it the case that:
+	$$
+	\exists X: P(V_0, V_1, \dots, V_k) = \sum_X{P(V_0, V_1, \dots, V_k, X)}
+	$$
 	
+	\section{Evaluation}
+	
+	\subsection{Implementation}
+	
+	A program for reading in directed graphs (interpreted as Bayesian networks) and performing analyses on them was written.
+	
+	\paragraph{Bayesian Network Equivalence}
+	As per the characterization of congruence classes of Bayesian networks presented in \cite{verma2013equivalence,chickering2013transformational}, testing for the equivalence of Bayesian networks was implemented via analysis on skeletons and v-structures.
+	
+	Additionally, a recursive, back-tracking assignment algorithm was implemented for enumerating \emph{all} Bayesian networks equivalent to a given network.
+	Indeed, this tool was used to validate the explanation given for the motivating example.
+	
+	\subsection{Analysis of Other Bayesian Networks}
+	
+	\section{Discussion}
+	
+	It is known that Bayesian networks are, on their own, insufficient models of causality.
+	Nevertheless, graphical models are useful for causal inference, and graphical models can capture many intuitions about causality (multiple causes, multiple effects, etc.).
+	Thus when performing such inference, it is important to know how merely looking at dependence relations between data can lead us astray.
+	
+	More concretely, causal inference asserts several assumptions on top of pure statistical inference\cite{ramsey2012adjacencyfaithfulness}:
+	\begin{itemize}
+		\item The causal Markov condition: the set of variables has a causal structure that forms a DAG that satisfies the Bayesian conditional dependence rule.
+		\item (Causal) faithfulness, decomposable as:
+			\subitem Adjacency faithfulness: adjacent nodes are dependent given any combination of other nodes.
+			\subitem Orientation faithfulness: when we have a v-structure (x, y, z), x and z are dependent given any subset of other nodes that contains y.
+	\end{itemize}
+	However, there are several problems.
+	I have already shown that several distinct DAGs can be compatible with the same joint probability distribution.
+	It is unclear that we can, a priori, know which DAG represents the proper causal structure.
+	Indeed, Verma \& Pearl note that the recovery of a causal network from data is only up to modulo DAG equivalence\cite{verma2013equivalence}.
+	It is also clear that the causal Markov condition (as presented) entails a form of completeness, e.g. common causes, which may appear as marginalized variables in a probabilistic network, are explicit.
+	Once again, there appears to be no a priori way to know if all common causes are accounted for. I propose several suggestions to mitigate these problems, based on the findings in previous sections.
+	
+	\subsection{Measure Common Effects}
+	The special importance of v-structures to the directness of a Bayesian network suggests that when designing a study, we should prioritize measuring variables that we believe will take this structure.
+	Thus, the structure around these variables will be determined by the probability and so will not have an ambiguous direction.
+	Namely, we would like to identify cases where there is a common effect (collider) of two independent causes (unshielded).
+	
+	\subsection{The Importance of Ground Truth}
 	
 	\bibliographystyle{plain}
 	\bibliography{references}
