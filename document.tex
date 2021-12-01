@@ -26,6 +26,8 @@
 \usepackage{algorithm}
 \usepackage{algorithmic}
 \usepackage{tkz-graph}
+\usepackage{caption}
+\usepackage{subcaption}
 
 \urlstyle{same}
 
@@ -79,8 +81,8 @@
 	achen19@stevens.edu
 }
 
-\newcommand{\problemone}{Directionality Problem}
-\newcommand{\problemtwo}{Marginalized Variables Problem}
+\newcommand{\problemone}{Same-Variable Equivalency Problem}
+\newcommand{\problemtwo}{Different-Variable Equivalency Problem}
 
 
 \begin{document}
@@ -100,11 +102,32 @@
 		
 	\section{Equivalent Bayesian Networks}
 	\subsection{Background}
-	$A \rightarrow B \rightarrow C$ is indistinguishable from $C \rightarrow B \rightarrow A$. However, substituting one structure with another in all cases may not preserve validity of a Bayesian network.
+	A Bayesian network is a tuple of a directed acyclic graph (DAG) and a probability distribution over variables corresponding to the vertices of the DAG, such that the probability measure to be compatible with the DAG, defined thusly:
+	\begin{definition}[Compatibility (Fong)\cite{fong2013causal}]
+		Graph $G$ is compatible with probability measure (over the vertices of $G$) $P$, if
+		$$
+		P(x_1, \dots, x_n) = \prod_{i=1}^n{P(x_i \mid pa(x_i))}
+		$$
+		where $pa(x_i)$ is the parents of $x_i$ in $G$.
+	\end{definition}
+	For the remainder of the paper, I may use ``Bayesian network'' to refer to the DAG associated with a Bayesian network.
 	
-	We may take a structure $A \rightarrow B$ and replace it with creating a new node $C$ with $A \leftarrow C \rightarrow B$.
+	\paragraph{Equivalency} Intuitively, two DAGs are equivalent when they are compatible with the same probability distributions. More formally:
+	\begin{definition}[Equivalency (Chickering)\cite{chickering2013transformational}]
+		$G$ is equivalent to $G'$ if $\forall P_G: (G, P_G)$ is a Bayesian network $\iff (G', P_G')$ is a Bayesian network.
+	\end{definition}
 	
-	\paragraph{Equivalency} Two Bayesian Networks are equivalent when \dots
+	For a simple example of equivalent Bayesian networks, consider the DAG of two nodes $A \rightarrow B$. The underlying probability distribution satisfies:
+	$$
+	P(A, B) = P(A)*P(B \mid A) = \\
+	P(A)*\frac{P(A \cap B)}{P(A)} = P(A \cap B)
+	$$
+	which is the exact same requirement for the graph of $A \leftarrow B$.
+	Thus the two DAGs are equivalent.
+%	$A \rightarrow B \rightarrow C$ is indistinguishable from $C \rightarrow B \rightarrow A$. However, substituting one structure with another in all cases may not preserve validity of a Bayesian network.
+	
+%	We may take a structure $A \rightarrow B$ and replace it with creating a new node $C$ with $A \leftarrow C \rightarrow B$.
+	
 	
 	\subsection{Motivating Example}
 	
@@ -127,15 +150,19 @@
 	Consider the Bayesian network shown in Figure \ref{dir-ex}, modified with two proposed changes from one presented in slides by Kleinberg\cite{lec4slides}.
 	
 	We know that in simple examples, as shown before, we may be able to reverse the direction of an arrow and have an equivalent Bayesian network.
-	Is it the case that we can flip the arrow labeled with ``?'' and have an equivalent network? More generally, what are all of ways we can flip arrows and have an equivalent network? I refer to this as the ``\problemone''. 
+	Is it the case that we can flip the arrow labeled with ``?'' and have an equivalent network? More generally, what are all of ways we can change the edges (be it flipping them, or removing and/or adding new edges) and have an equivalent network? I refer to this as the ``\problemone''. 
 
 	We also know that many cases, there is some underlying cause (say X), that causes two other variables, thus creating an apparent correlation (in the example, smoking and lung cancer). In this example, can we add the node X and maintain compatibility with the joint probability distributions (excluding X) described by the original network? More generally, how can we add (or remove) nodes while maintaining compatibility on the restricted domain? I refer to this as the ``\problemtwo''.
 	
 	\subsection{Goals}
-	Implementation of solutions to both problems, use of them to analyze a few existing networks.
+	In Sections \ref{problemone} and \ref{problemtwo}. I will formalize the two problems briefly described.
+	Then, for each, I will present the theory for the resolution to the problems.
+	The resolutions will be implemented as described in Section \ref{evaluation}, and the implementation will be used to evaluate several purported causal Bayesian networks to analyze the implicit assumptions.
+	Finally, in Section \ref{discussion}, I discuss the implications of these problems on inferring causal relationships from observational data.
 
 
 	\section{\problemone}
+	\label{problemone}
 	
 	Verma \& Pearl\cite{verma2013equivalence} give a necessary and sufficient condition for testing the equivalence of Bayesian networks.
 	Specifically, and phrased more simply by Chickering\cite{chickering2013transformational}, two Bayesian networks are equivalent if they have the same:
@@ -144,6 +171,8 @@
 		\item V-Structures: set of all unshielded colliders (i.e. triples of the form $X \rightarrow Y \leftarrow Z$ with $X$ not adjacent to $Z$).
 	\end{enumerate}
 	More generally, since each Bayesian network belongs to a finitely-sized equivalence class of networks completely determined by skeleton and v-structures, we may characterize all networks equivalent to a given network by those factors.
+	
+	Notably, since it is the case that equivalent networks must have the same skeleton, we may limit our consideration to only how we assign directions to the edges of a network, not changing the structure of the edges themselves.
 	
 	In the case of whether a single edge is reversible (while preserving equivalence), Chickering\cite{chickering2013transformational} presents a necessary and sufficient condition: the edge $X \rightarrow Y$ is reversible if and only if the parents of $Y$ are exactly $X$ and the parents of $X$.
 	(Moreover, they show that every equivalent network may be reached by a sequence of such edge reversals.)
@@ -157,7 +186,7 @@
 	To do so, we note that the only v-structure in the graph is Chronic Bronchitis $\rightarrow$ Fatigue $\leftarrow$ Lung Cancer.
 	Thus we may erase the arrows on all other edges, and we obtain Figure \ref{undir-ex}.
 	
-	\begin{figure}[b]
+	\begin{figure}[t]
 	\begin{tikzpicture}[scale=1]
 		\tikzstyle{VertexStyle} = [shape=rectangle,minimum width=6ex, draw]
 		\tikzstyle{EdgeStyle}   = [-,>=stealth']
@@ -178,15 +207,97 @@
 	\begin{enumerate}
 		\item The graph as shown in Figure \ref{dir-ex}.
 		\item Chronic Bronchitis $\rightarrow$ Smoking $\rightarrow$ Lung Cancer $\rightarrow$ Mass on X-Ray.
-		\item Mass on X-Ray $\rightarrow$ Lung Cancer $\rightarrow$ Smoking $\rightarrow$ Chronic Bronchitis.
-		\item Chronic Bronchitis $\leftarrow$ Smoking $\leftarrow$ Lung Cancer $\rightarrow$ Mass on X-Ray.
+		\item Mass on X-Ray $\rightarrow$ Lung Cancer $\rightarrow$ Smoking $\rightarrow$ Chronic Bronchitis. \label{LCimpSmoking1}
+		\item Chronic Bronchitis $\leftarrow$ Smoking $\leftarrow$ Lung Cancer $\rightarrow$ Mass on X-Ray. \label{LCimpSmoking2}
 	\end{enumerate}
 	Any other choice on arrows would create a new v-structure, either on (Chronic Bronchitis, Smoking, Lung Cancer), or on (Smoking, Lung Cancer, Mass on X-Ray). In this example, creating a cycle is impossible.
 	
 	\section{\problemtwo}
-	\paragraph{Marginalization}
+	\label{problemtwo}
+	In Section \ref{problemone}, the case of changing the edge-structure of a DAG was investigated.
+	Now, consider the cases where we change the number of nodes in a graph.
+	On a practical level, node addition may be done if it is believed that an unmeasured variable is truly responsible for observed dependencies.
+	Node removal may be done mostly for simplifying computation, but it may also be seen as the inverse process of node addition.
+	That is, to ask the question of ``when can we add a node to a DAG'', it may be dually phrased as ``which DAGs yield this one once a node is removed''.
 	
+	Formally, we look at two forms of node removal: marginalization and conditioning.
+	
+	\paragraph{Node Removal}
+	
+	To give a semi-formal treatment of the problem statement, consider that we have measure (probability) spaces parameterized by each variable: $X_1, \dots, X_n$.
+	Suppose we have a probability measure $P$ on the product space $X_1 \times \dots \times X_n$.
+	We would like to, from this measure, derive a measure for the subspace $X_1 \times \dots \times X_{k-1} \times X_{k+1} \times \dots \times X_n$, essentially ``removing'' $X_k$.
+	There are two canonical (and useful) ways to do so.
+	Take $x_i \in X_i$:
+	
+	\begin{definition}[Marginalization (Barber)\cite{barberBRML2012}]
+		The marginalization of probability measure $P(x_1, \dots, x_n)$ over $x_k$ is
+		$$
+		P(x_1,\dots,x_{k-1},x_{k+1},\dots,x_n) = \sum_{x_k}{P(x_1,\dots,x_n)}
+		$$
+	\end{definition}
+
+	\begin{definition}[Conditioning]
+		The conditioning of probability measure $P(x_1, \dots, x_n)$ on $x_k$ is
+		$$
+		P(x_1,\dots,x_{k-1},x_{k+1},\dots,x_n \mid x_k)$$
+		$$ = \frac{P(x_1,\dots,x_n)}{P(x_k)}
+		$$
+	\end{definition}
+	Note that the expression in the denomination is a marginalization.
+	
+	To see how these operations affect a Bayesian network, consider the simple examples of how parents and children of nodes are affected. Consider Figure \ref{commonparent}. Suppose we wanted the marginalization over A. By the Bayesian network, we know
+	$$
+	P(A, B, C) = P(A)P(B \mid A)P(C \mid A)
+	$$
+	$$
+	\sum_A{P(A, B, C)} = \sum_A{P(A)P(B \mid A)P(C \mid A)}
+	$$
+	Which is not, in general, reducible to $P(B)P(C)$. Thus after marginalization, $B$ and $C$ are dependent, so there must be an edge between them. By contrast, consider the case in Figure \ref{collider}.
+	$$
+	P(A, B, C) = P(A \mid B, C)P(B)P(C)
+	$$
+	\[
+	\begin{array}{ll}
+	\sum_A{P(A, B, C)} & = \sum_A{P(A \mid B, C)P(B)P(C)} \\
+					   & = P(B)P(C) \sum_A{P(A \mid B, C)} \\
+					   & = P(B)P(C)
+	\end{array}
+	\]
+	And so, $B$ and $C$ are independent and the Bayesian network after marginalization is the of $B$ and $C$ and no edges.
+	
+	\begin{figure}
+		\centering
+		\begin{subfigure}{0.45\columnwidth}
+			\begin{tikzpicture}[scale=1]
+				\tikzstyle{VertexStyle} = [shape=rectangle,minimum width=6ex, draw]
+				\tikzstyle{EdgeStyle}   = [->,>=stealth']
+				
+				\SetGraphUnit{1.5}
+				\Vertex{A}  \SOWE(A){B} \SOEA(A){C}
+				\Edge(A)(B) \Edge(A)(C)
+			\end{tikzpicture}
+			\subcaption{B and C conditioned on A.}
+			\label{commonparent}
+		\end{subfigure}
+	\begin{subfigure}{0.45\columnwidth}
+		\begin{tikzpicture}[scale=1]
+			\tikzstyle{VertexStyle} = [shape=rectangle,minimum width=6ex, draw]
+			\tikzstyle{EdgeStyle}   = [->,>=stealth']
+			
+			\SetGraphUnit{1.5}
+			\Vertex{A}  \NOWE(A){B} \NOEA(A){C}
+			\Edge(B)(A) \Edge(C)(A)
+		\end{tikzpicture}
+		\subcaption{A conditioned on B and C.}
+		\label{collider}
+	\end{subfigure}
+	\caption{DAGs illustrating the simplest non-trivial cases of parents and children.}
+	\label{simple}
+	\end{figure}
+
 	\paragraph{Node Addition}
+	Inverse process? Data conditioned on something? Do math stuff and show trivial generalities. Berkson's paradox. Common cause.
 	In the case of inference, we may be more interested in whether our observed data is data marginalized on some hidden cause X.
 	Formally, is it the case that:
 	$$
@@ -194,6 +305,7 @@
 	$$
 	
 	\section{Evaluation}
+	\label{evaluation}
 	
 	\subsection{Implementation}
 	
@@ -208,6 +320,7 @@
 	\subsection{Analysis of Other Bayesian Networks}
 	
 	\section{Discussion}
+	\label{discussion}
 	
 	It is known that Bayesian networks are, on their own, insufficient models of causality.
 	Nevertheless, graphical models are useful for causal inference, and graphical models can capture many intuitions about causality (multiple causes, multiple effects, etc.).
@@ -232,7 +345,15 @@
 	Thus, the structure around these variables will be determined by the probability and so will not have an ambiguous direction.
 	Namely, we would like to identify cases where there is a common effect (collider) of two independent causes (unshielded).
 	
+	As an example, suppose we wanted to argue that smoking (S) causes lung cancer (C).
+	We know from the example in Figure \ref{undir-ex} that as drawn, we cannot (in the absence of outside information) determine whether it is smoking that plays a role in lung cancer, or vice versa.
+	However, suppose we have another suspected cause of lung cancer, say asbestos exposure (A), and we believe that $S \perp A$.
+	Then, in observation, we may find that $P(S, C, A) = P(S)*P(C \mid S, A)*P(A)$, and thus we know that the direction of those edges are forced.
+	Then if we assume causal faithfulness, which one must to perform reasonable causal inference anyway, then we find that it must be the case that smoking causes lung cancer, not vice-versa.
+	
 	\subsection{The Importance of Ground Truth}
+	An independent source of directionality can drastically narrow down the number of possible equivalent Bayesian networks. For example, in the motivating example, if we know externally that Smoking $\rightarrow$ Lung Cancer, we can eliminate options (\ref{LCimpSmoking1}) and (\ref{LCimpSmoking2}), as they do not obey this direction.
+	Considering that the theoretical ceiling on direction assignments is $2^n$, where $n$ is the number of undirected edges, it is possible that each ground truth (that is not already implied by the v-structures) can reduce the possibility space exponentially.
 	
 	\bibliographystyle{plain}
 	\bibliography{references}
