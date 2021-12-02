@@ -266,6 +266,17 @@
 	\]
 	And so, $B$ and $C$ are independent and the Bayesian network after marginalization is the of $B$ and $C$ and no edges.
 	
+	In general, it appears that marginalization does not introduce new edges between parents. It appears to extend edges from each parent to each child, and create a directed clique among the children. I could not find a source proving this claim for DAGs in particular, but processes for variable elimination (marginalization) involve the moralization of the (undirected) hidden Markov model corresponding to the DAG\cite{kollerVarElim}.
+	
+	For simple cases of conditioning, we find the opposite effect as marginalization (very much suggesting that it is a dual process).
+	Barber\cite{barberBRML2012} creates the same example graphs, and asserts that in Figure \ref{commonparent}, conditioning on A creates an edge between B and C, and in Figure \ref{collider}, conditioning on A results in a graph with no edges.
+	More generally, the case of conditioning may be more well understood through the mechanism of d-separation.
+	Recall that two nodes x and y are dependent conditioned on a node z (more generally a set of nodes) if z d-separates x and y.
+	We can use this condition to ascertain the structure of the graph resulting from conditioning on a variable.
+	In particular, removing a node z necessarily creates a dependency between every pair of nodes d-separated by z.
+	
+	Once again, I could not locate a source proving this result, so I leave it as an unproven conjecture: conditioning on a node z yields a Bayesian network whose DAG is the original DAG, but with an additional edge between each node d-separated by z (thus forming a directed clique).
+	
 	\begin{figure}
 		\centering
 		\begin{subfigure}{0.45\columnwidth}
@@ -297,12 +308,36 @@
 	\end{figure}
 
 	\paragraph{Node Addition}
-	Inverse process? Data conditioned on something? Do math stuff and show trivial generalities. Berkson's paradox. Common cause.
-	In the case of inference, we may be more interested in whether our observed data is data marginalized on some hidden cause X.
-	Formally, is it the case that:
-	$$
-	\exists X: P(V_0, V_1, \dots, V_k) = \sum_X{P(V_0, V_1, \dots, V_k, X)}
-	$$
+	
+	I now arrive at the opposite problem, one that is more relevant to causal inference: the addition of new nodes.
+	There is fundamental difficulty in that one cannot know a priori whether there is an underlying cause.
+	First, allow me to semi-formally state the problem:
+	
+	Given a Bayesian network $(G, P)$, is it the case that:
+	\[\begin{array}{l}
+	\text{Characterize } (G',  P')\text{ such that: }\\
+	\text{Vertices}(G') = \text{Vertices}(G') \cup \{x\} \wedge \\
+	P \text{ is the marginalization/conditioning of } P' \text{ over/on x}.
+	\end{array}\]
+	
+	There are clearly trivial cases: marginalizing on leaves, conditioning on root nodes, and either operations on nodes whose variables have a trivial probability distribution (one outcome happens with probability 1).
+	
+	Since the problem is phrased in terms of the result of a node removal, operations that leave clear effects on the graph, we can look for such effects.
+	Namely, they tend to form complete bipartite sub-graphs, and tend to form cliques.
+	Elidan et. al\cite{elidanDiscovering2001} formalize this intuition; when such a Bayesian network is construct-able, then indeed, the probability measures satisfy the same independence constraints, and furthermore, the new graph is minimal (in some sense).
+	
+	
+%	Inverse process? Data conditioned on something? Do math stuff and show trivial generalities. Berkson's paradox. Common cause.
+%	In the case of inference, we may be more interested in whether our observed data is data marginalized on some hidden cause X.
+	
+%	marginalization as underlying causes, conditionalization as confounding (berkson's paradox)
+	
+%	Formally, is it the case that:
+%	$$
+%	\exists X: P(V_0, V_1, \dots, V_k) = \sum_X{P(V_0, V_1, \dots, V_k, X)}
+%	$$
+	
+	
 	
 	\section{Evaluation}
 	\label{evaluation}
@@ -354,6 +389,8 @@
 	\subsection{The Importance of Ground Truth}
 	An independent source of directionality can drastically narrow down the number of possible equivalent Bayesian networks. For example, in the motivating example, if we know externally that Smoking $\rightarrow$ Lung Cancer, we can eliminate options (\ref{LCimpSmoking1}) and (\ref{LCimpSmoking2}), as they do not obey this direction.
 	Considering that the theoretical ceiling on direction assignments is $2^n$, where $n$ is the number of undirected edges, it is possible that each ground truth (that is not already implied by the v-structures) can reduce the possibility space exponentially.
+	
+	\subsection{Underlying Causes}
 	
 	\bibliographystyle{plain}
 	\bibliography{references}
