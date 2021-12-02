@@ -320,12 +320,23 @@
 	P \text{ is the marginalization/conditioning of } P' \text{ over/on x}.
 	\end{array}\]
 	
-	There are clearly trivial cases: marginalizing on leaves, conditioning on root nodes, and either operations on nodes whose variables have a trivial probability distribution (one outcome happens with probability 1).
+	where x is a node not in $G$. There are clearly trivial cases: marginalizing on leaves, conditioning on root nodes, and either operations on nodes whose variables have a trivial probability distribution (one outcome happens with probability 1).
 	
 	Since the problem is phrased in terms of the result of a node removal, operations that leave clear effects on the graph, we can look for such effects.
 	Namely, they tend to form complete bipartite sub-graphs, and tend to form cliques.
 	Elidan et. al\cite{elidanDiscovering2001} formalize this intuition; when such a Bayesian network is construct-able, then indeed, the probability measures satisfy the same independence constraints, and furthermore, the new graph is minimal (in some sense).
 	
+	The authors go on to describe that in inference contexts, the completely strict clique requirement is too much, and that semi-cliques are good indicators to try to infer hidden variables. They propose a heuristic-based algorithm for the detection of semi-cliques for the purposes of inference.
+	
+	\paragraph{Examples}
+	Berkson's paradox is a well-known statistical paradox, where a sample skewed by thresholding admits an apparent (usually negative) correlation.
+	It may be modeled in the realm of Bayesian networks by conditioning on a collider (e.g. conditioning on $A$ in Figure \ref{collider}).
+	In the resulting observations, we see two variables that appear to be correlated, but in actuality are independent; a study's design may just be flawed in a way (apparent or not readily apparent) such that the conditioning occurs prior to data analysis.
+	
+	In the motivating example (ref. Figure \ref{dir-ex}), we wondered if a node X could be added above Smoking and Lung Cancer.
+	It is clear that a trivial node could have been there --- either a node we condition on to get the graph we have currently, or a variable with a trivial probability distribution.
+	The interesting case is whether there is an underlying cause (i.e. a node that we would marginalize on).
+	As Smoking is a root node, there's no way to a priori (to collection of additional data) know whether there is an underlying cause; at the very least, in the view of Elidan et. al, the relative simplicity of the graph does not give us reason to believe that there should be one.
 	
 %	Inverse process? Data conditioned on something? Do math stuff and show trivial generalities. Berkson's paradox. Common cause.
 %	In the case of inference, we may be more interested in whether our observed data is data marginalized on some hidden cause X.
@@ -352,7 +363,16 @@
 	Additionally, a recursive, back-tracking assignment algorithm was implemented for enumerating \emph{all} Bayesian networks equivalent to a given network.
 	Indeed, this tool was used to validate the explanation given for the motivating example.
 	
+	\paragraph{Node Removal/Addition}
+	
+	
+	
 	\subsection{Analysis of Other Bayesian Networks}
+	
+	Two other Bayesian networks from published papers were used to investigate the quality of causal networks in publications. \cite{Xu2018} \cite{liverDisorders}
+	
+	\subsection{Availability}
+	The code for the tool, all example inputs and outputs, and the source for this paper are available on my GitHub at \url{https://github.com/Crazycolorz5/BayesianNetworkRewriting}.
 	
 	\section{Discussion}
 	\label{discussion}
