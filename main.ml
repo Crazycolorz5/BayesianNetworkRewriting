@@ -1,6 +1,8 @@
 open Printf
 open Graph
 
+let flip f x y = f y x
+
 let print_position outx (lexbuf : Lexing.lexbuf) = (* Adapted from https://dev.realworldocaml.org/parsing-with-ocamllex-and-menhir.html *)
   let pos = lexbuf.lex_curr_p in
   fprintf outx "%s:%d:%d" pos.pos_fname
@@ -12,6 +14,7 @@ let help_string =
 ./main equiv <graph_file1> <graph_file2>
 ./main pattern <graph_file>
 ./main enum <graph_file> <output_dir>
+./main marginalize <graph_file> <vertex>
 "
 
 let graph_of_fname fname = 
@@ -47,6 +50,21 @@ let main =
                 let out = open_out @@ dirname ^ "/" ^ fname ^ "_" ^ string_of_int i in
                 fprintf out "%s" @@ string_of_graph g; close_out out
             ) equivs
+        | "marginalize" ->
+            let fname = Sys.argv.(2) in
+            let vname = Sys.argv.(3) in
+            print_string @@ string_of_graph @@ flip marginalize vname @@ graph_of_fname @@ fname;
+            print_newline ()
+        | "cliques_n" ->
+            let fname = Sys.argv.(2) in
+            let n = int_of_string @@ Sys.argv.(3) in
+            List.iter (fun vs -> print_string @@ string_of_vertices vs; print_newline (); print_newline ()) @@ flip cliques_n n @@ graph_of_fname @@ fname;
+            print_newline ()
+        | "infer_n" ->
+            let fname = Sys.argv.(2) in
+            let n = int_of_string @@ Sys.argv.(3) in
+            print_string @@ string_of_graph @@ flip infer_n n @@ graph_of_fname @@ fname;
+            print_newline ()
         | _ -> print_string help_string
     end with
     | _ -> print_string help_string

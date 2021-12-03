@@ -40,6 +40,22 @@ let string_of_graph (g : t) : string = match g with
     | Graph(vs, es) -> 
         string_of_vertices vs ^ ";\n" ^ string_of_edges es
 
+let swap (x, y) = (y, x)
+
+let uncurry f (x, y) = f x y
+
+let rec iter_n (vs : SS.t) (n : int) (f : SS.t -> unit) : unit =
+    if n = 1 then SS.iter (fun elt -> f @@ SS.singleton elt) vs else
+    let g elt lst = if SS.mem elt lst then () else f (SS.add elt lst) in
+    SS.iter (fun elt -> iter_n vs (n-1) (g elt)) vs
+
+let new_name g =
+    let vs = vertices g in
+    let i = ref 0 in
+    let name = ref @@ "x" ^ string_of_int !i in
+    while SS.mem !name vs do
+        i := !i + 1
+    done; !name
 
 (*** Standard graph theory utility functions ***)
 
@@ -75,6 +91,33 @@ let ancestors : t -> string -> SS.t =
 let descendants : t -> string -> SS.t = 
     workset_alg children
 
+let topsort g : string list =
+    let vs = vertices g in let es = edges g in
+    let roots = SS.diff vs (SS.of_list @@ List.map snd @@ SSS.elements es) in
+    (* This is just the worklist algorithm, but order matters so we use Lists *)
+    let workset = ref @@ SS.elements roots in
+    let seenset = ref [] in
+    while not (!workset = []) do 
+        let elt = List.hd !workset in
+        workset := List.tl !workset;
+        if List.mem elt !seenset
+        then ()
+        else begin
+            seenset := List.cons elt !seenset;
+            workset := !workset @ SS.elements @@ children g elt
+        end
+    done;
+    List.rev !seenset
+
+let inverse g =
+    let vs = vertices g in
+    let es = edges g in
+    Graph (vs, SSS.map swap es)
+
+let cliques_n g n =
+    let cliques = ref [] in
+    iter_n (vertices g) n (fun elts -> if SS.for_all (fun elt1 -> SS.for_all (fun elt2 -> elt1 = elt2 || adjacent g elt1 elt2) elts) elts then cliques := List.cons elts !cliques else ());
+    !cliques
 
 (*** And now the domain specific functions ***)
 
@@ -110,8 +153,6 @@ let equiv g0 g1 =
     let v1 = sort_f @@ all_vstructures g1 in
     List.equal (fun x y -> x = y) v0 v1
     end
-
-let swap (x, y) = (y, x)
 
 (* Note that this does not produce a DAG, as there will be undirected edges
    (represented as having an edge in both directions) *)
@@ -175,3 +216,29 @@ let covered (g : t) (e : string * string) : bool =
     SS.equal (SS.add (fst e) (parents g (fst e))) (parents g (snd e))
 
 
+(* Marginalizing on (removing a) nodes *)
+let marginalize g v =
+    let pars = SS.elements @@ parents g v in
+    let clds = SS.elements @@ children g v in
+    let p_to_c = SSS.of_list @@ List.concat_map (fun par -> List.map (fun cld -> (par, cld)) clds) pars in
+    (* create a directed clique among the children respecting topological order *)
+    let ts = topsort g in
+    let tlevel = Hashtbl.create 10 in
+    List.iter (uncurry @@ Hashtbl.add tlevel) @@ List.mapi (fun i e -> (e, i)) ts;
+    let c_to_c = SSS.of_list @@ List.concat_map
+        (fun c1 -> List.concat_map
+        (fun c2 -> if Hashtbl.find tlevel c1 < Hashtbl.find tlevel c2 then [(c1, c2)] else []
+        ) clds) clds in
+    let filtered_edges = SSS.filter (fun (x, y) -> not (x = v) && not (y = v)) @@ edges g in
+    Graph (SS.remove v @@ vertices g, SSS.union p_to_c @@ SSS.union c_to_c filtered_edges)
+
+(* Inverse of marginalize *)
+let infer_n g n =
+    let cliques = cliques_n g n in
+    let cliques_with_parents = List.map (fun clique -> (clique, SS.elements clique |> List.fold_left (fun parent_set child -> SS.inter parent_set (parents g child)) (vertices g))) cliques in
+    if cliques_with_parents = [] then g else
+    let maximal_clique, pars = List.fold_left (fun (max_so_far, max_pars) (clique, pars) -> if SS.cardinal pars > SS.cardinal max_pars then (clique, pars) else (max_so_far, max_pars)) (List.hd cliques_with_parents) (List.tl cliques_with_parents) in
+    let name = new_name g in
+    let pruned_edges = SSS.filter (fun edge -> not (SS.mem (fst edge) pars && SS.mem (snd edge) maximal_clique)) @@ edges g in
+    let new_edges = SSS.union pruned_edges @@ SSS.union (SS.fold (fun par es -> SSS.add (par, name) es) pars SSS.empty) @@ SS.fold (fun cld es -> SSS.add (name, cld) es) maximal_clique SSS.empty in
+    Graph (SS.add name @@ vertices g, new_edges)
