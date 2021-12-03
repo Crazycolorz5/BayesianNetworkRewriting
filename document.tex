@@ -2,7 +2,7 @@
 
 %%%% ijcai22.tex
 
-\typeout{IJCAI--22 Instructions for Authors}
+\typeout{Causal Inference Final Paper}
 
 % These are the instructions for authors for IJCAI-22.
 
@@ -70,7 +70,7 @@
 	/TemplateVersion (IJCAI.2022.0)
 }
 
-\title{Bayesian Networks and Graph Rewrites}
+\title{Bayesian Networks: Structure and Directionality}
 
 % Single author syntax
 \author{
@@ -364,12 +364,38 @@
 	Indeed, this tool was used to validate the explanation given for the motivating example.
 	
 	\paragraph{Node Removal/Addition}
+	I implemented marginalizing on nodes using the conjectured rules described previously. This was done simply via transformations on the edge set.
 	
+	After this, the more difficult task of inferring node additions was implemented.
+	Brute-force detection of cliques of a given size was used.
+	From the list of all cliques, the clique with the highest number of parents shared among all clique members was chosen.
+	From the chosen clique, an artificial node was added, and all edges from the shared parents to clique members were removed.
+	Edges from each shared parent to the new node and edges from the new node to each clique member were added.
+	Note that the edges between clique members were not removed; there may often be dependencies between effects.
 	
+	It must be noted that this process is not necessarily a solution to the problem as presented.
+	Coherence with the new network must be verified with the underlying data.
+	However, it is a heuristic for potential alternate DAGs that explain the data with less complexity.
+	
+	As implemented, the operations of marginalization and inference are one-sided inverses in the sense that the composition of inference and marginalization is idempotent.
 	
 	\subsection{Analysis of Other Bayesian Networks}
 	
-	Two other Bayesian networks from published papers were used to investigate the quality of causal networks in publications. \cite{Xu2018} \cite{liverDisorders}
+	Two other Bayesian networks from published papers were used to investigate the quality of causal vs non-causal networks in publications.
+	One was an explicitly causal Bayesian network for the diagnosis of liver disorders\cite{liverDisorders}.
+	The other was a probabilistic (i.e. non-causal) network assessing factors contributing to quality of life (mental and physical) in the Reach for Life cohort\cite{Xu2018}.
+	
+	The DAGs are reproduced in Figure \ref{networks}.
+	
+	I found that the causal liver disorders network was uniquely determined.
+	That is, no reversals of edges would produce an equivalent Bayesian network.
+	
+	The same directionality (edge-reversal) analysis was performed on the quality of life network.
+	A total of 12 valid graphs were obtained.
+	This suggests that there are several relations whose directionality cannot be inferred from the data alone.
+	Indeed, the authors repeat that their model is merely a probabilistic model from observations, and do not assert it as a causal model.
+	
+	% TODO: Node addition/removal
 	
 	\subsection{Availability}
 	The code for the tool, all example inputs and outputs, and the source for this paper are available on my GitHub at \url{https://github.com/Crazycolorz5/BayesianNetworkRewriting}.
@@ -395,6 +421,8 @@
 	It is also clear that the causal Markov condition (as presented) entails a form of completeness, e.g. common causes, which may appear as marginalized variables in a probabilistic network, are explicit.
 	Once again, there appears to be no a priori way to know if all common causes are accounted for. I propose several suggestions to mitigate these problems, based on the findings in previous sections.
 	
+	\subsection{Directionality from Conjunctive Observation}
+	
 	\subsection{Measure Common Effects}
 	The special importance of v-structures to the directness of a Bayesian network suggests that when designing a study, we should prioritize measuring variables that we believe will take this structure.
 	Thus, the structure around these variables will be determined by the probability and so will not have an ambiguous direction.
@@ -411,6 +439,8 @@
 	Considering that the theoretical ceiling on direction assignments is $2^n$, where $n$ is the number of undirected edges, it is possible that each ground truth (that is not already implied by the v-structures) can reduce the possibility space exponentially.
 	
 	\subsection{Underlying Causes}
+	
+	\subsection{Computational Complexity}
 	
 	\bibliographystyle{plain}
 	\bibliography{references}
