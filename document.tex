@@ -90,18 +90,18 @@
 	\maketitle
 	
 	\begin{abstract}
-		It is known that Bayesian networks are an insufficient model for causality, as they merely describe the decomposition of a joint probability into conditional probabilities.
-		This fails, in most cases, to capture directionality --- a crucial aspect of causality.
+		It is known that Bayesian networks alone are an insufficient model for causality, as they merely describe the decomposition of a joint probability into conditional probabilities.
+		They fail, in most cases, to capture directionality --- a crucial aspect of causality.
 		Furthermore, conditional probability fails to tell us about hidden confounders.
 		
 		I look at the mathematical formalizations of these two shortcomings, and review the existing corpus of work on their categorization.
 		I implement a tool to analyze when these shortcomings may be an issue and create ambiguities in Bayesian networks.
-		The tool is used to find ambiguities in practical, real-life Bayesian networks, and the implications of such ambiguities on causal inference is discussed.
+		The tool is used to assess potential ambiguities in existing Bayesian networks, and the implications of such ambiguities on causal inference are discussed.
 	\end{abstract}
 	
 		
-	\section{Equivalent Bayesian Networks}
-	\subsection{Background}
+	\section{Introduction}
+	\subsection{Equivalent Bayesian Networks}
 	A Bayesian network is a tuple of a directed acyclic graph (DAG) and a probability distribution over variables corresponding to the vertices of the DAG, such that the probability measure to be compatible with the DAG, defined thusly:
 	\begin{definition}[Compatibility (Fong)\cite{fong2013causal}]
 		Graph $G$ is compatible with probability measure (over the vertices of $G$) $P$, if
@@ -114,15 +114,16 @@
 	
 	\paragraph{Equivalency} Intuitively, two DAGs are equivalent when they are compatible with the same probability distributions. More formally:
 	\begin{definition}[Equivalency (Chickering)\cite{chickering2013transformational}]
-		$G$ is equivalent to $G'$ if $\forall P_G: (G, P_G)$ is a Bayesian network $\iff (G', P_G')$ is a Bayesian network.
+		$G$ is equivalent to $G'$ if $\forall P_G: (G, P_G)$ is a Bayesian network $\iff (G', P_G)$ is a Bayesian network.
 	\end{definition}
 	
 	For a simple example of equivalent Bayesian networks, consider the DAG of two nodes $A \rightarrow B$. The underlying probability distribution satisfies:
 	$$
 	P(A, B) = P(A)*P(B \mid A) = \\
-	P(A)*\frac{P(A \cap B)}{P(A)} = P(A \cap B)
+	P(A)*\frac{P(A, B)}{P(A)} = P(A, B)
 	$$
-	which is the exact same requirement for the graph of $A \leftarrow B$.
+	In other words, we have no additional constraints (information) on how A and B are distributed.
+	Notably, this is the same constraint for the graph of $A \leftarrow B$.
 	Thus the two DAGs are equivalent.
 %	$A \rightarrow B \rightarrow C$ is indistinguishable from $C \rightarrow B \rightarrow A$. However, substituting one structure with another in all cases may not preserve validity of a Bayesian network.
 	
@@ -387,6 +388,19 @@
 	
 	The DAGs are reproduced in Figure \ref{networks}.
 	
+	\begin{figure}[t]
+		\begin{subfigure}{\columnwidth}
+			\includegraphics[width=\textwidth]{liver-disorders.png}
+			\caption{Liver disorders Bayesian network\cite{liverDisorders}.}
+		\end{subfigure}
+		\begin{subfigure}{\columnwidth}
+			\includegraphics[width=\textwidth]{qol.jpg}
+			\caption{Quality of life Bayesian network\cite{barberBRML2012}.}
+		\end{subfigure}
+		\caption{Bayesian networks from publications used for evaluation.}
+		\label{networks}
+	\end{figure}
+	
 	I found that the causal liver disorders network was uniquely determined.
 	That is, no reversals of edges would produce an equivalent Bayesian network.
 	
@@ -395,7 +409,16 @@
 	This suggests that there are several relations whose directionality cannot be inferred from the data alone.
 	Indeed, the authors repeat that their model is merely a probabilistic model from observations, and do not assert it as a causal model.
 	
-	% TODO: Node addition/removal
+	Node marginalization was tested on the liver disorders network. The PBC node was marginalized.
+	Noting that the node has 6 children, inference based on cliques was tested.
+	Indeed, the algorithm identified a node where the PBC node was.
+	Finally, the re-inferred node was marginalized to confirm that indeed, inference and marginalization are idempotent, and the network after the original marginalization was re-obtained.
+	The exact graphs input to the program and obtained back are included in Appendix \ref{analyzedgraphs}.
+	Specifically, Figure \ref{marginalized} shows the graph after marginalizing PBC, and Figure \ref{inferred} shows the inferred node --- note that the structure of the graph around \verb|x0| is very similar to that around \verb|pbc| in the original graph.
+	
+	While the executions were not timed, it is worth noting that all operations except for inference did not take a significant amount of time.
+	Inference (looking for cliques of order 6) on the liver disorders graph took on the order of several minutes to execute.
+	
 	
 	\subsection{Availability}
 	The code for the tool, all example inputs and outputs, and the source for this paper are available on my GitHub at \url{https://github.com/Crazycolorz5/BayesianNetworkRewriting}.
@@ -419,9 +442,8 @@
 	It is unclear that we can, a priori, know which DAG represents the proper causal structure.
 	Indeed, Verma \& Pearl note that the recovery of a causal network from data is only up to modulo DAG equivalence\cite{verma2013equivalence}.
 	It is also clear that the causal Markov condition (as presented) entails a form of completeness, e.g. common causes, which may appear as marginalized variables in a probabilistic network, are explicit.
-	Once again, there appears to be no a priori way to know if all common causes are accounted for. I propose several suggestions to mitigate these problems, based on the findings in previous sections.
-	
-	\subsection{Directionality from Conjunctive Observation}
+	Once again, there appears to be no a priori way to know if all common causes are accounted for.
+	I address these problem, and propose several suggestions, based on the findings in previous sections.
 	
 	\subsection{Measure Common Effects}
 	The special importance of v-structures to the directness of a Bayesian network suggests that when designing a study, we should prioritize measuring variables that we believe will take this structure.
@@ -438,13 +460,241 @@
 	An independent source of directionality can drastically narrow down the number of possible equivalent Bayesian networks. For example, in the motivating example, if we know externally that Smoking $\rightarrow$ Lung Cancer, we can eliminate options (\ref{LCimpSmoking1}) and (\ref{LCimpSmoking2}), as they do not obey this direction.
 	Considering that the theoretical ceiling on direction assignments is $2^n$, where $n$ is the number of undirected edges, it is possible that each ground truth (that is not already implied by the v-structures) can reduce the possibility space exponentially.
 	
-	\subsection{Underlying Causes}
+	It may also sometimes be the case that knowing one edge's direction can, through the introduction of a v-structure, allow us to deduce other edges' directions.
+	For example, if we know that Smoking causes Lung Cancer, then it cannot be the case that Mass on X-Ray causes Lung Cancer; if it did then (Smoking, Lung Cancer, Mass on X-Ray) would be a v-structure not present in the original network.
+	Thus if we have a reliable knowledge base, then there may be a snowball effect where we can become more certain of other pieces of knowledge.
+	
+	\subsection{Directionality from Observation}
+	It is a common assertion that one cannot argue for causality from observational studies.
+	This is a claim that has already been addressed previously; just because a study is an RCT does not mean it can prove causality, and just because a study is observational does not mean it does not offer evidence for a causal claim.
+	Traditional ways to argue for direction from observational studies is to use time (if A happens before B, then there is the direction of time from A to B).
+	The well-defined directions induced by colliders suggests that they may be used to asserting directionality from pure observation.
+	This supports that well-designed observational studies can be valid bases for arguing causality.
+	
+	\subsection{Heuristics for Underlying Causes}
+	As in the clique-based approach, or the approach used by Elidan et al.\cite{elidanDiscovering2001}, certain patterns of complexity (more formally phrased in the language of cliques), give us reason to test for presence of an underlying variable.
+	Of course, it may be the case that in reality, the relations really are just complex, but experimentally, they found this heuristic approach to yield good results.
+	
+	This approach appears to be consonant with the principle of parsimony (informally known as Occam's razor).
+	Fewer premises need to hold for a simpler explanation as opposed to a one resting on many premises.
+	Here, our assumptions include that each edge in the graph corresponds to a real, causal connection.
+	The principle of parsimony suggests that we ought to prefer an alternate, simpler graph that is still sufficient to explain our observations.
+	Thus, the approach of looking to simplify the most complex parts of a graph seem to abide by this classical principle.
 	
 	\subsection{Computational Complexity}
+	Clique (and semi-clique) detection is well-known to be NP-complete.
+	This poses a problem if we are to use clique detection to find underlying causes.
+	If we take a more direct interpretation that such cliques are an indicator of hidden causes, then the interpretation of the problem of NP-complete suggests that while the discovery of underlying causes is hard, verification is comparatively easy.
+	It is interesting that this observation lines up well with current approaches to science, where the majority of work is exploratory in nature, and most work has a negative result.
+	
+	At the very least, the computational difficulty justifies the use of heuristic approaches.
+	Yet, the use of heuristics introduces another layer of uncertainty (either that we have found all underlying causes or in the validity of causes found).
+	Analogies may be drawn to uncertainties in the philosophy of science --- of knowing completeness of an explanation or a priori knowing that a step in our beliefs is invalid.
+	
+	\section{Further Work}
+	Were I to expand on this project, I would like to prove the conjectures for how marginalization and conditioning affect a network.
+	I found it very surprising that, while the behavior of these operations for simple cases were shown, I could not find a full graph transformation rule.
+	Out of the sources I could locate, Barber\cite{barberBRML2012} went the most in-depth, but instead of fully describing the graph operations, they went on to describe ascertaining dependence via d-separation (which tells us about paths and thus only indirectly the structure).
+	This appears to be a problem that is more applied in the area of undirected graphs and variable elimination in machine learning.
+	Still, the mathematics should give a clear answer to how it affects the setting of Bayesian networks.
+	
+	I would like to work with data, similar to how Bayes Server\cite{bayesServer} allows for visualization of Bayesian networks.
+	This would allow for some more practical experiments relating graph-based (as opposed to data-based) inference, as the validity of the inference techniques based on graph structure must be validated against the data.
+	Even more so than validity, since such techniques often rely on heuristics, evaluation of their effectiveness in actual data is necessary to compare techniques' relative effectiveness.
+	
 	
 	\bibliographystyle{plain}
 	\bibliography{references}
 	
 	\appendix
 	
+	\section{Analyzed Graphs}
+	\label{analyzedgraphs}
+	\begin{figure}
+	\begin{verbatim}
+		obesity,
+		alcohol,
+		sex,
+		age,
+		steatosis,
+		pbc,
+		hyperbilirubinemia,
+		triglycerides,
+		ast,
+		esr,
+		ggtp,
+		le_cells,
+		antimytochondrial_antibodies,
+		alt,
+		cholesterol,
+		bilirubin,
+		musculo_skeletal_pain,
+		itching,
+		jaundice;
+		obesity->steatosis,
+		alcohol->steatosis,
+		sex->pbc,
+		sex->hyperbilirubinemia,
+		age->pbc,
+		age->hyperbilirubinemia,
+		steatosis->triglycerides,
+		steatosis->ast,
+		steatosis->alt,
+		steatosis->esr,
+		steatosis->cholesterol,
+		steatosis->ggtp,
+		pbc->esr,
+		pbc->cholesterol,
+		pbc->ggtp,
+		pbc->bilirubin,
+		pbc->le_cells,
+		pbc->antimytochondrial_antibodies,
+		hyperbilirubinemia->esr,
+		hyperbilirubinemia->ggtp,
+		hyperbilirubinemia->bilirubin,
+		le_cells->musculo_skeletal_pain,
+		antimytochondrial_antibodies->
+		  musculo_skeletal_pain,
+		bilirubin->itching,
+		bilirubin->jaundice
+	\end{verbatim}
+	\caption{The text representation of the liver disorders network.}
+	\end{figure}
+
+	\begin{figure}
+	\begin{verbatim}
+		age,
+		alcohol,
+		alt,
+		antimytochondrial_antibodies,
+		ast,
+		bilirubin,
+		cholesterol,
+		esr,
+		ggtp,
+		hyperbilirubinemia,
+		itching,
+		jaundice,
+		le_cells,
+		musculo_skeletal_pain,
+		obesity,
+		sex,
+		steatosis,
+		triglycerides;
+		age -> antimytochondrial_antibodies,
+		age -> bilirubin,
+		age -> cholesterol,
+		age -> esr,
+		age -> ggtp,
+		age -> hyperbilirubinemia,
+		age -> le_cells,
+		alcohol -> steatosis,
+		antimytochondrial_antibodies -> cholesterol,
+		antimytochondrial_antibodies -> le_cells,
+		antimytochondrial_antibodies ->
+		  musculo_skeletal_pain,
+		bilirubin -> antimytochondrial_antibodies,
+		bilirubin -> cholesterol,
+		bilirubin -> esr,
+		bilirubin -> ggtp,
+		bilirubin -> itching,
+		bilirubin -> jaundice,
+		bilirubin -> le_cells,
+		cholesterol -> le_cells,
+		esr -> antimytochondrial_antibodies,
+		esr -> cholesterol,
+		esr -> ggtp,
+		esr -> le_cells,
+		ggtp -> antimytochondrial_antibodies,
+		ggtp -> cholesterol,
+		ggtp -> le_cells,
+		hyperbilirubinemia -> bilirubin,
+		hyperbilirubinemia -> esr,
+		hyperbilirubinemia -> ggtp,
+		le_cells -> musculo_skeletal_pain,
+		obesity -> steatosis,
+		sex -> antimytochondrial_antibodies,
+		sex -> bilirubin,
+		sex -> cholesterol,
+		sex -> esr,
+		sex -> ggtp,
+		sex -> hyperbilirubinemia,
+		sex -> le_cells,
+		steatosis -> alt,
+		steatosis -> ast,
+		steatosis -> cholesterol,
+		steatosis -> esr,
+		steatosis -> ggtp,
+		steatosis -> triglycerides
+	\end{verbatim}
+	\caption{The liver disorders network after marginalizing pbc.}
+	\label{marginalized}
+	\end{figure}
+
+	\begin{figure}
+	\begin{verbatim}
+		age,
+		alcohol,
+		alt,
+		antimytochondrial_antibodies,
+		ast,
+		bilirubin,
+		cholesterol,
+		esr,
+		ggtp,
+		hyperbilirubinemia,
+		itching,
+		jaundice,
+		le_cells,
+		musculo_skeletal_pain,
+		obesity,
+		sex,
+		steatosis,
+		triglycerides,
+		x0;
+		age -> hyperbilirubinemia,
+		age -> x0,
+		alcohol -> steatosis,
+		antimytochondrial_antibodies -> cholesterol,
+		antimytochondrial_antibodies -> le_cells,
+		antimytochondrial_antibodies ->
+		  musculo_skeletal_pain,
+		bilirubin -> antimytochondrial_antibodies,
+		bilirubin -> cholesterol,
+		bilirubin -> esr,
+		bilirubin -> ggtp,
+		bilirubin -> itching,
+		bilirubin -> jaundice,
+		bilirubin -> le_cells,
+		cholesterol -> le_cells,
+		esr -> antimytochondrial_antibodies,
+		esr -> cholesterol,
+		esr -> ggtp,
+		esr -> le_cells,
+		ggtp -> antimytochondrial_antibodies,
+		ggtp -> cholesterol,
+		ggtp -> le_cells,
+		hyperbilirubinemia -> bilirubin,
+		hyperbilirubinemia -> esr,
+		hyperbilirubinemia -> ggtp,
+		le_cells -> musculo_skeletal_pain,
+		obesity -> steatosis,
+		sex -> hyperbilirubinemia,
+		sex -> x0,
+		steatosis -> alt,
+		steatosis -> ast,
+		steatosis -> cholesterol,
+		steatosis -> esr,
+		steatosis -> ggtp,
+		steatosis -> triglycerides,
+		x0 -> antimytochondrial_antibodies,
+		x0 -> bilirubin,
+		x0 -> cholesterol,
+		x0 -> esr,
+		x0 -> ggtp,
+		x0 -> le_cells
+	\end{verbatim}
+	\caption{The marginalized liver disorders network after inferring an underlying cause of order 6.}
+	\label{inferred}
+	\end{figure}
 \end{document}
