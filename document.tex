@@ -102,9 +102,9 @@
 		
 	\section{Introduction}
 	\subsection{Equivalent Bayesian Networks}
-	A Bayesian network is a tuple of a directed acyclic graph (DAG) and a probability distribution over variables corresponding to the vertices of the DAG, such that the probability measure to be compatible with the DAG, defined thusly:
+	A Bayesian network is a tuple of a directed acyclic graph (DAG) and a probability distribution over variables corresponding to the vertices of the DAG, such that the probability measure is compatible with the DAG, defined thusly:
 	\begin{definition}[Compatibility (Fong)\cite{fong2013causal}]
-		Graph $G$ is compatible with probability measure (over the vertices of $G$) $P$, if
+		Directed acyclic graph $G$ is compatible with probability measure (over the vertices of $G$) $P$, if
 		$$
 		P(x_1, \dots, x_n) = \prod_{i=1}^n{P(x_i \mid pa(x_i))}
 		$$
@@ -115,6 +115,7 @@
 	\paragraph{Equivalency} Intuitively, two DAGs are equivalent when they are compatible with the same probability distributions. More formally:
 	\begin{definition}[Equivalency (Chickering)\cite{chickering2013transformational}]
 		$G$ is equivalent to $G'$ if $\forall P_G: (G, P_G)$ is a Bayesian network $\iff (G', P_G)$ is a Bayesian network.
+		Alternatively, $\forall P_G: G$ is compatible with $P_G \iff G'$ is compatible with $P_G$.
 	\end{definition}
 	
 	For a simple example of equivalent Bayesian networks, consider the DAG of two nodes $A \rightarrow B$. The underlying probability distribution satisfies:
@@ -151,14 +152,14 @@
 	Consider the Bayesian network shown in Figure \ref{dir-ex}, modified with two proposed changes from one presented in slides by Kleinberg\cite{lec4slides}.
 	
 	We know that in simple examples, as shown before, we may be able to reverse the direction of an arrow and have an equivalent Bayesian network.
-	Is it the case that we can flip the arrow labeled with ``?'' and have an equivalent network? More generally, what are all of ways we can change the edges (be it flipping them, or removing and/or adding new edges) and have an equivalent network? I refer to this as the ``\problemone''. 
+	Is it the case that we can reverse the arrow labeled with ``?'' and have an equivalent network? More generally, what are all of ways we can change the edges (be it reversing, removing, or adding edges) and have an equivalent network? I refer to this as the ``\problemone''. 
 
 	We also know that many cases, there is some underlying cause (say X), that causes two other variables, thus creating an apparent correlation (in the example, smoking and lung cancer). In this example, can we add the node X and maintain compatibility with the joint probability distributions (excluding X) described by the original network? More generally, how can we add (or remove) nodes while maintaining compatibility on the restricted domain? I refer to this as the ``\problemtwo''.
 	
 	\subsection{Goals}
 	In Sections \ref{problemone} and \ref{problemtwo}. I will formalize the two problems briefly described.
 	Then, for each, I will present the theory for the resolution to the problems.
-	The resolutions will be implemented as described in Section \ref{evaluation}, and the implementation will be used to evaluate several purported causal Bayesian networks to analyze the implicit assumptions.
+	The resolutions will be implemented as described in Section \ref{evaluation}, and the implementation will be used to evaluate several Bayesian networks (causal and probabilistic) from research to analyze their validity and robustness.
 	Finally, in Section \ref{discussion}, I discuss the implications of these problems on inferring causal relationships from observational data.
 
 
