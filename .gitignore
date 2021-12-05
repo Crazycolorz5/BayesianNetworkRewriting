@@ -1,0 +1,15 @@
+*.pdf
+*.aux
+*.bbl
+*.log
+*.out
+*.gz
+*.blg
+
+*.cmi
+*.cmo
+
+lexer.ml
+parser.ml
+parser.mli
+main

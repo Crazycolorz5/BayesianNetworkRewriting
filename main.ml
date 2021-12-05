@@ -9,12 +9,16 @@ let print_position outx (lexbuf : Lexing.lexbuf) = (* Adapted from https://dev.r
     pos.pos_lnum (pos.pos_cnum - pos.pos_bol + 1)
 
 let help_string = 
-"Unknown option or incorrect parameters. Valid modes:
+"Unknown option or incorrect parameters.
+Main functions:
+./main enum <graph_file> <output_dir>
+./main marginalize <graph_file> <vertex>
+./main infer_n <graph_file> <n>
+Utility functions:
 ./main print <graph_file>
 ./main equiv <graph_file1> <graph_file2>
 ./main pattern <graph_file>
-./main enum <graph_file> <output_dir>
-./main marginalize <graph_file> <vertex>
+./main cliques_n <graph_file> <n>
 "
 
 let graph_of_fname fname = 
