@@ -174,8 +174,7 @@
 	\end{enumerate}
 	More generally, since each Bayesian network belongs to a finitely-sized equivalence class of networks completely determined by skeleton and v-structures, we may characterize all networks equivalent to a given network by those factors.
 	
-	Notably, since it is the case that equivalent networks must have the same skeleton, we may limit our consideration to only how we assign directions to the edges of a network, not changing the structure of the edges themselves.
-	
+	Notably, since it is the case that equivalent networks must have the same skeleton, we may limit our consideration to only how we assign directions to the edges of a network, not changing the structure or number of the edges themselves.
 	In the case of whether a single edge is reversible (while preserving equivalence), Chickering\cite{chickering2013transformational} presents a necessary and sufficient condition: the edge $X \rightarrow Y$ is reversible if and only if the parents of $Y$ are exactly $X$ and the parents of $X$.
 	(Moreover, they show that every equivalent network may be reached by a sequence of such edge reversals.)
 	
@@ -220,13 +219,13 @@
 	Now, consider the cases where we change the number of nodes in a graph.
 	On a practical level, node addition may be done if it is believed that an unmeasured variable is truly responsible for observed dependencies.
 	Node removal may be done mostly for simplifying computation, but it may also be seen as the inverse process of node addition.
-	That is, to ask the question of ``when can we add a node to a DAG'', it may be dually phrased as ``which DAGs yield this one once a node is removed''.
+	That is, to ask the question of ``when can we add a node to a DAG'', one may ask the dual question of ``are there DAGs while yield this one once a node is removed''.
 	
 	Formally, we look at two forms of node removal: marginalization and conditioning.
 	
 	\paragraph{Node Removal}
 	
-	To give a semi-formal treatment of the problem statement, consider that we have measure (probability) spaces parameterized by each variable: $X_1, \dots, X_n$.
+	To give a semi-formal treatment of the problem statement, consider that we have measure (probability) spaces represented by each variable: $X_1, \dots, X_n$.
 	Suppose we have a probability measure $P$ on the product space $X_1 \times \dots \times X_n$.
 	We would like to, from this measure, derive a measure for the subspace $X_1 \times \dots \times X_{k-1} \times X_{k+1} \times \dots \times X_n$, essentially ``removing'' $X_k$.
 	There are two canonical (and useful) ways to do so.
@@ -246,9 +245,9 @@
 		$$ = \frac{P(x_1,\dots,x_n)}{P(x_k)}
 		$$
 	\end{definition}
-	Note that the expression in the denomination is a marginalization.
+	Note that the expression in the denominator is a marginalization.
 	
-	To see how these operations affect a Bayesian network, consider the simple examples of how parents and children of nodes are affected. Consider Figure \ref{commonparent}. Suppose we wanted the marginalization over A. By the Bayesian network, we know
+	To see how these operations affect a Bayesian network, consider the simple examples of how parents and children of nodes are affected. Refer to Figure \ref{commonparent}. Suppose we wanted the marginalization over A. By the Bayesian network, we know
 	$$
 	P(A, B, C) = P(A)P(B \mid A)P(C \mid A)
 	$$
@@ -266,16 +265,16 @@
 					   & = P(B)P(C)
 	\end{array}
 	\]
-	And so, $B$ and $C$ are independent and the Bayesian network after marginalization is the of $B$ and $C$ and no edges.
+	And so, $B$ and $C$ are independent and the Bayesian network after marginalization is the graph of $B$ and $C$ and no edges.
 	
-	In general, it appears that marginalization does not introduce new edges between parents. It appears to extend edges from each parent to each child, and create a directed clique among the children. I could not find a source proving this claim for DAGs in particular, but processes for variable elimination (marginalization) involve the moralization of the (undirected) hidden Markov model corresponding to the DAG\cite{kollerVarElim}.
+	In general, it appears that marginalization does not introduce new edges between parents. It appears to extend edges from each parent to each child, and create a directed clique among the children. I could not find a source proving this claim for DAGs in particular, but processes for variable elimination (usually taken to mean marginalization) involve the moralization of the (undirected) hidden Markov model corresponding to the DAG\cite{kollerVarElim}.
 	
 	For simple cases of conditioning, we find the opposite effect as marginalization (very much suggesting that it is a dual process).
 	Barber\cite{barberBRML2012} creates the same example graphs, and asserts that in Figure \ref{commonparent}, conditioning on A creates an edge between B and C, and in Figure \ref{collider}, conditioning on A results in a graph with no edges.
 	More generally, the case of conditioning may be more well understood through the mechanism of d-separation.
 	Recall that two nodes x and y are dependent conditioned on a node z (more generally a set of nodes) if z d-separates x and y.
 	We can use this condition to ascertain the structure of the graph resulting from conditioning on a variable.
-	In particular, removing a node z necessarily creates a dependency between every pair of nodes d-separated by z.
+	In particular, removing a node z necessarily creates a dependency between every pair of nodes d-separated by z (i.e. there exists a path between them that does not contain a collider).
 	
 	Once again, I could not locate a source proving this result, so I leave it as an unproven conjecture: conditioning on a node z yields a Bayesian network whose DAG is the original DAG, but with an additional edge between each node d-separated by z (thus forming a directed clique).
 	
@@ -315,20 +314,22 @@
 	There is fundamental difficulty in that one cannot know a priori whether there is an underlying cause.
 	First, allow me to semi-formally state the problem:
 	
-	Given a Bayesian network $(G, P)$, is it the case that:
+	Given a DAG $G$, we would like to:
 	\[\begin{array}{l}
-	\text{Characterize } (G',  P')\text{ such that: }\\
-	\text{Vertices}(G') = \text{Vertices}(G') \cup \{x\} \wedge \\
-	P \text{ is the marginalization/conditioning of } P' \text{ over/on x}.
+	\text{Characterize } G'\text{ such that: }\\
+	\text{Vertices}(G') = \text{Vertices}(G) \cup \{x\} \wedge \\
+	\forall P, P': P \text{ is marginalization of } P' \text{ over x} \implies \\
+	((G, P) \text{ is a Bayesian network} \iff \\
+	(G', P') \text{ is a Bayesian network}).
 	\end{array}\]
-	
-	where x is a node not in $G$. There are clearly trivial cases: marginalizing on leaves, conditioning on root nodes, and either operations on nodes whose variables have a trivial probability distribution (one outcome happens with probability 1).
+	where x is a node not in $G$ (mutatis mutandis for conditioning). There are clearly trivial cases: marginalizing on leaves, conditioning on root nodes.
 	
 	Since the problem is phrased in terms of the result of a node removal, operations that leave clear effects on the graph, we can look for such effects.
-	Namely, they tend to form complete bipartite sub-graphs, and tend to form cliques.
+	Namely, they tend to form complete bipartite sub-graphs and cliques.
 	Elidan et. al\cite{elidanDiscovering2001} formalize this intuition; when such a Bayesian network is construct-able, then indeed, the probability measures satisfy the same independence constraints, and furthermore, the new graph is minimal (in some sense).
 	
-	The authors go on to describe that in inference contexts, the completely strict clique requirement is too much, and that semi-cliques are good indicators to try to infer hidden variables. They propose a heuristic-based algorithm for the detection of semi-cliques for the purposes of inference.
+	The authors go on to describe that in inference contexts, the completely strict clique requirement is too much, and that semi-cliques are good indicators to try to infer hidden variables.
+	They propose a heuristic-based algorithm for the detection of semi-cliques for the purposes of inference.
 	
 	\paragraph{Examples}
 	Berkson's paradox is a well-known statistical paradox, where a sample skewed by thresholding admits an apparent (usually negative) correlation.
@@ -336,8 +337,9 @@
 	In the resulting observations, we see two variables that appear to be correlated, but in actuality are independent; a study's design may just be flawed in a way (apparent or not readily apparent) such that the conditioning occurs prior to data analysis.
 	
 	In the motivating example (ref. Figure \ref{dir-ex}), we wondered if a node X could be added above Smoking and Lung Cancer.
-	It is clear that a trivial node could have been there --- either a node we condition on to get the graph we have currently, or a variable with a trivial probability distribution.
+	It is clear that a node that is condition on could be added; this is a trivial case.
 	The interesting case is whether there is an underlying cause (i.e. a node that we would marginalize on).
+	It may be possible, as there is the necessary dependency between Smoking and Lung Cancer.
 	As Smoking is a root node, there's no way to a priori (to collection of additional data) know whether there is an underlying cause; at the very least, in the view of Elidan et. al, the relative simplicity of the graph does not give us reason to believe that there should be one.
 	
 %	Inverse process? Data conditioned on something? Do math stuff and show trivial generalities. Berkson's paradox. Common cause.
@@ -376,14 +378,15 @@
 	Note that the edges between clique members were not removed; there may often be dependencies between effects.
 	
 	It must be noted that this process is not necessarily a solution to the problem as presented.
-	Coherence with the new network must be verified with the underlying data.
+	Namely, if we must assume causal faithfulness, we must verify coherence with the new network with the underlying data.
+	To satisfy faithfulness, some of the edges added in the conservative theoretical case may have to be removed.
 	However, it is a heuristic for potential alternate DAGs that explain the data with less complexity.
 	
 	As implemented, the operations of marginalization and inference are one-sided inverses in the sense that the composition of inference and marginalization is idempotent.
 	
 	\subsection{Analysis of Other Bayesian Networks}
 	
-	Two other Bayesian networks from published papers were used to investigate the quality of causal vs non-causal networks in publications.
+	Two other Bayesian networks from published papers were used to investigate the qualities of causal as well as non-causal networks in publications.
 	One was an explicitly causal Bayesian network for the diagnosis of liver disorders\cite{liverDisorders}.
 	The other was a probabilistic (i.e. non-causal) network assessing factors contributing to quality of life (mental and physical) in the Reach for Life cohort\cite{Xu2018}.
 	
@@ -408,12 +411,13 @@
 	The same directionality (edge-reversal) analysis was performed on the quality of life network.
 	A total of 12 valid graphs were obtained.
 	This suggests that there are several relations whose directionality cannot be inferred from the data alone.
+	At least once ambiguity arises from a root node which is the sole parent of their children, namely (Insomnia, Depression).
 	Indeed, the authors repeat that their model is merely a probabilistic model from observations, and do not assert it as a causal model.
 	
 	Node marginalization was tested on the liver disorders network. The PBC node was marginalized.
 	Noting that the node has 6 children, inference based on cliques was tested.
 	Indeed, the algorithm identified a node where the PBC node was.
-	Finally, the re-inferred node was marginalized to confirm that indeed, inference and marginalization are idempotent, and the network after the original marginalization was re-obtained.
+	Finally, the re-inferred node was marginalized to confirm that inference and marginalization are idempotent, and the network after the original marginalization was re-obtained.
 	The exact graphs input to the program and obtained back are included in Appendix \ref{analyzedgraphs}.
 	Specifically, Figure \ref{marginalized} shows the graph after marginalizing PBC, and Figure \ref{inferred} shows the inferred node --- note that the structure of the graph around \verb|x0| is very similar to that around \verb|pbc| in the original graph.
 	
@@ -440,8 +444,9 @@
 	\end{itemize}
 	However, there are several problems.
 	I have already shown that several distinct DAGs can be compatible with the same joint probability distribution.
+	By assuming the causal Markov condition, we assert that there is some causal difference between these DAGs.
 	It is unclear that we can, a priori, know which DAG represents the proper causal structure.
-	Indeed, Verma \& Pearl note that the recovery of a causal network from data is only up to modulo DAG equivalence\cite{verma2013equivalence}.
+	Indeed, Verma \& Pearl note that the recovery of a causal network from data is only modulo up to DAG equivalence\cite{verma2013equivalence}.
 	It is also clear that the causal Markov condition (as presented) entails a form of completeness, e.g. common causes, which may appear as marginalized variables in a probabilistic network, are explicit.
 	Once again, there appears to be no a priori way to know if all common causes are accounted for.
 	I address these problem, and propose several suggestions, based on the findings in previous sections.
@@ -463,6 +468,7 @@
 	
 	It may also sometimes be the case that knowing one edge's direction can, through the introduction of a v-structure, allow us to deduce other edges' directions.
 	For example, if we know that Smoking causes Lung Cancer, then it cannot be the case that Mass on X-Ray causes Lung Cancer; if it did then (Smoking, Lung Cancer, Mass on X-Ray) would be a v-structure not present in the original network.
+	And so, it must be the case that Lung Cancer is what causes Mass on X-Ray, not vice-versa.
 	Thus if we have a reliable knowledge base, then there may be a snowball effect where we can become more certain of other pieces of knowledge.
 	
 	\subsection{Directionality from Observation}
@@ -494,7 +500,7 @@
 	
 	\section{Further Work}
 	Were I to expand on this project, I would like to prove the conjectures for how marginalization and conditioning affect a network.
-	I found it very surprising that, while the behavior of these operations for simple cases were shown, I could not find a full graph transformation rule.
+	I found it very surprising that, while the behavior of these operations for simple cases were shown, I could not find a source for a full graph transformation rule.
 	Out of the sources I could locate, Barber\cite{barberBRML2012} went the most in-depth, but instead of fully describing the graph operations, they went on to describe ascertaining dependence via d-separation (which tells us about paths and thus only indirectly the structure).
 	This appears to be a problem that is more applied in the area of undirected graphs and variable elimination in machine learning.
 	Still, the mathematics should give a clear answer to how it affects the setting of Bayesian networks.
